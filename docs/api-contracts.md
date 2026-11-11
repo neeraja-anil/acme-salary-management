@@ -44,10 +44,12 @@ Errors follow **RFC 7807 Problem Details** (`application/problem+json`), plus a 
 | 404 | `NOT_FOUND` | The employee (or other resource) doesn't exist |
 | 409 | `DUPLICATE_EMAIL` | The email is already used by another employee |
 | 409 | `STALE_VERSION` | The record changed since it was loaded |
+| 409 | `DATA_CONFLICT` | A database constraint rejected the change (a safety net behind the service checks, e.g. two simultaneous creates with the same email) |
 | 400 | `INVALID_FILE` | The upload is not a readable CSV, or required columns are missing |
 | 413 | `FILE_TOO_LARGE` | The upload is over 5 MB or 10,000 rows |
 | 422 | `IMPORT_HAS_ERRORS` | An import was confirmed but some rows are invalid. The body includes the same report as preview |
 | 422 | `BUSINESS_RULE_VIOLATION` | The input is valid but breaks a rule. `detail` explains which; `rule` names it (see §5) |
+| 405 / 415 | `METHOD_NOT_ALLOWED` / `UNSUPPORTED_MEDIA_TYPE` | Wrong HTTP method or content type |
 | 500 | `INTERNAL_ERROR` | Unexpected error. No stack trace is returned; details are logged on the server |
 
 **400 vs 422:** `400` means the request is malformed. `422` means the request is well-formed but not allowed (for example, an effective date before the current one). The UI can then show field errors for 400 and a message banner for 422.
@@ -121,7 +123,7 @@ Filters combine with AND. Repeated values of one filter combine with OR.
       "employeeCode": "EMP-000042",
       "firstName": "Lena", "lastName": "Fischer",
       "email": "lena.fischer@acme.example",
-      "country": { "code": "DE", "name": "Germany" },
+      "country": { "code": "DE", "name": "Germany", "currency": "EUR" },
       "department": { "id": 1, "name": "Engineering" },
       "jobTitle": { "id": 1, "name": "Software Engineer" },
       "jobLevel": "L3",
@@ -200,7 +202,7 @@ Errors: 400, 404, 409 `DUPLICATE_EMAIL`, 409 `STALE_VERSION`, and 422 `EMPLOYEE_
 ```
 → `200 OK` with the profile (`status: TERMINATED`), plus a `DEACTIVATE` audit entry.
 
-Errors: 422 `ALREADY_TERMINATED`, 422 `TERMINATION_BEFORE_HIRE`, 409 `STALE_VERSION`.
+Errors: 422 `ALREADY_TERMINATED`, 422 `TERMINATION_BEFORE_HIRE`, 422 `TERMINATION_DATE_IN_FUTURE`, 409 `STALE_VERSION`.
 
 This is an explicit action rather than `DELETE`, because records are never removed.
 

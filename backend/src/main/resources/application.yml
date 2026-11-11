@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: acme-salary-management
+
+  datasource:
+    # SQLite file. Override the location with APP_DB_PATH (e.g. /data/acme.db).
+    # foreign_keys: SQLite leaves FK enforcement off unless enabled per connection.
+    # journal_mode=WAL: readers are not blocked while a write is in progress.
+    # busy_timeout: wait up to 5s for the single writer lock instead of failing immediately.
+    url: jdbc:sqlite:${APP_DB_PATH:acme.db}?foreign_keys=true&journal_mode=WAL&busy_timeout=5000
+    hikari:
+      maximum-pool-size: 4
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate     # Flyway owns the schema; Hibernate only checks the mapping matches
+    properties:
+      hibernate:
+        dialect: com.acme.salary.common.persistence.AcmeSqliteDialect
+
+  flyway:
+    locations: classpath:db/migration
+
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: ${PORT:8080}
+  error:
+    include-stacktrace: never
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
