@@ -32,5 +32,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/employees/employee-form.page').then((m) => m.EmployeeFormPage),
     canDeactivate: [unsavedChangesGuard],
   },
+  {
+    path: 'insights',
+    title: 'Pay insights · ACME',
+    loadComponent: () => import('./features/insights/insights.page').then((m) => m.InsightsPage),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];

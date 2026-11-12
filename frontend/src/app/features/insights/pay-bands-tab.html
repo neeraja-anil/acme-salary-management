@@ -1,0 +1,76 @@
+<p-card>
+  <div class="table-toolbar">
+    <div class="filters">
+      <div class="field">
+        <label for="bands-department">Department</label>
+        <p-select inputId="bands-department" [options]="departmentOptions" optionLabel="name" optionValue="id"
+                  [ngModel]="departmentId()" (ngModelChange)="selectDepartment($event)" [fluid]="true" />
+      </div>
+      <div class="field">
+        <label for="bands-title">Job title</label>
+        <p-select inputId="bands-title" [options]="jobTitleOptions()" optionLabel="name" optionValue="id"
+                  [ngModel]="jobTitleId()" (ngModelChange)="jobTitleId.set($event)" [filter]="true" [fluid]="true" />
+      </div>
+      <div class="field">
+        <label for="bands-level">Level</label>
+        <p-select inputId="bands-level" [options]="levelOptions" optionLabel="label" optionValue="value"
+                  [ngModel]="jobLevel()" (ngModelChange)="jobLevel.set($event)" [fluid]="true" />
+      </div>
+      <div class="field">
+        <label for="bands-country">Country</label>
+        <p-select inputId="bands-country" [options]="countryOptions" optionLabel="name" optionValue="code"
+                  [ngModel]="country()" (ngModelChange)="country.set($event)" [fluid]="true" />
+      </div>
+    </div>
+    <app-pay-view-toggle />
+  </div>
+
+  <p class="caption intro">{{ caption() }} Hover a column name for what it means.</p>
+  @if (view() === 'bars') {
+    <app-range-legend class="legend" />
+  }
+
+  <p-table [value]="data()?.rows ?? []" class="pay-table" [loading]="!data()" [paginator]="true" [rows]="pager.size"
+           [first]="pager.first()" (firstChange)="pager.first.set($event)" [defaultSortOrder]="-1"
+           [showCurrentPageReport]="true" [currentPageReportTemplate]="pageReport">
+    <ng-template #header>
+      <tr>
+        <th scope="col">Job title</th>
+        <th scope="col">Level</th>
+        <th scope="col" class="num" pSortableColumn="stats.headcount" [pTooltip]="columns.people.hint"><p-sortIcon field="stats.headcount" /> {{ columns.people.label }}</th>
+        @if (view() === 'numbers') {
+          <th scope="col" class="num" pSortableColumn="stats.min" [pTooltip]="columns.min.hint"><p-sortIcon field="stats.min" /> {{ columns.min.label }}</th>
+          <th scope="col" class="num" pSortableColumn="stats.p25" [pTooltip]="columns.range.hint"><p-sortIcon field="stats.p25" /> {{ columns.range.label }}</th>
+          <th scope="col" class="num" pSortableColumn="stats.median" [pTooltip]="columns.median.hint"><p-sortIcon field="stats.median" /> {{ columns.median.label }}</th>
+          <th scope="col" class="num" pSortableColumn="stats.max" [pTooltip]="columns.max.hint"><p-sortIcon field="stats.max" /> {{ columns.max.label }}</th>
+        } @else {
+          <th scope="col" class="bar-col" pSortableColumn="stats.median" [pTooltip]="columns.bar.hint">{{ columns.bar.label }} <p-sortIcon field="stats.median" /></th>
+        }
+      </tr>
+    </ng-template>
+    <ng-template #body let-row>
+      <tr>
+        <td class="strong">{{ row.jobTitle.name }}</td>
+        <td>{{ levelLabel(row.jobLevel) }}</td>
+        <td class="num">
+          @if (row.lowSample) {
+            <p-tag value="Low sample" severity="warn" class="low-sample"
+                   pTooltip="Fewer than 3 people, so this band is not reliable" />
+          }
+          {{ row.stats.headcount | number }}
+        </td>
+        @if (view() === 'numbers') {
+          <td class="num">{{ row.stats.min | money: currency() }}</td>
+          <td class="num">{{ row.stats.p25 | money: currency() }} – {{ row.stats.p75 | money: currency() }}</td>
+          <td class="num strong">{{ row.stats.median | money: currency() }}</td>
+          <td class="num">{{ row.stats.max | money: currency() }}</td>
+        } @else {
+          <td class="bar-col"><app-range-bar [stats]="row.stats" [currency]="currency()" [labels]="true" /></td>
+        }
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr><td colspan="7"><div class="empty">No active employees match these filters.</div></td></tr>
+    </ng-template>
+  </p-table>
+</p-card>
