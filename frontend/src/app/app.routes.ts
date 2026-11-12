@@ -8,5 +8,10 @@ export const routes: Routes = [
     title: 'Dashboard · ACME',
     loadComponent: () => import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
   },
+  {
+    path: 'employees',
+    title: 'Employees · ACME',
+    loadComponent: () => import('./features/employees/directory.page').then((m) => m.DirectoryPage),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];

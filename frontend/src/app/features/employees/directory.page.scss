@@ -1,0 +1,37 @@
+.search-field {
+  flex: 1 1 280px;
+  max-width: 420px;
+}
+
+// The five filters share the row evenly.
+.filter-row {
+  margin-bottom: 20px;
+
+  .field {
+    flex: 1 1 160px;
+    width: auto;
+  }
+}
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+// "Salary in: Local currency | USD", at the right edge of the toolbar.
+.salary-view {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code {
+  font-variant-numeric: tabular-nums;
+}
+
+.notice {
+  margin-bottom: 16px;
+}
