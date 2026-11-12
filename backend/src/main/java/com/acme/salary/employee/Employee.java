@@ -27,8 +27,8 @@ import jakarta.persistence.Version;
  * <ul>
  *   <li>country is fixed after creation (it sets the salary currency);</li>
  *   <li>terminated employees are read-only;</li>
- *   <li>salary is never set directly here except through salary changes (current salary is denormalised
- *       from {@code salary_history}).</li>
+ *   <li>the current salary only changes through {@link #applySalaryChange}, alongside a new
+ *       {@code salary_history} row (it is a denormalised copy of the latest row).</li>
  * </ul>
  */
 @Entity
@@ -135,6 +135,16 @@ public class Employee {
     public void terminate(LocalDate terminationDate, Instant now) {
         this.status = EmployeeStatus.TERMINATED;
         this.terminationDate = terminationDate;
+        this.updatedAt = now;
+    }
+
+    /**
+     * Moves the denormalised current salary to a new value. Only called by the salary service, in the
+     * same transaction that inserts the matching {@code salary_history} row.
+     */
+    public void applySalaryChange(long newAmount, LocalDate effectiveDate, Instant now) {
+        this.currentSalaryAmount = newAmount;
+        this.currentSalaryEffectiveDate = effectiveDate;
         this.updatedAt = now;
     }
 

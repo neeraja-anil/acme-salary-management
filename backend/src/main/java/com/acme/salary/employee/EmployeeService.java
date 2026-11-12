@@ -6,6 +6,11 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
+import com.acme.salary.audit.AuditAction;
+import com.acme.salary.audit.AuditChanges;
+import com.acme.salary.audit.AuditEntityType;
+import com.acme.salary.audit.AuditEvent;
+import com.acme.salary.audit.AuditService;
 import com.acme.salary.auth.CurrentUser;
 import com.acme.salary.common.error.BusinessRuleException;
 import com.acme.salary.common.error.ConflictException;
@@ -53,13 +58,15 @@ public class EmployeeService {
     private final JobTitleRepository jobTitles;
     private final EmployeeCodeGenerator codeGenerator;
     private final EmployeeMapper mapper;
+    private final AuditService auditService;
     private final CurrentUser currentUser;
     private final Clock clock;
 
     public EmployeeService(EmployeeRepository employees, SalaryHistoryRepository salaryHistory,
                            CountryRepository countries, DepartmentRepository departments,
                            JobTitleRepository jobTitles, EmployeeCodeGenerator codeGenerator,
-                           EmployeeMapper mapper, CurrentUser currentUser, Clock clock) {
+                           EmployeeMapper mapper, AuditService auditService, CurrentUser currentUser,
+                           Clock clock) {
         this.employees = employees;
         this.salaryHistory = salaryHistory;
         this.countries = countries;
@@ -67,6 +74,7 @@ public class EmployeeService {
         this.jobTitles = jobTitles;
         this.codeGenerator = codeGenerator;
         this.mapper = mapper;
+        this.auditService = auditService;
         this.currentUser = currentUser;
         this.clock = clock;
     }
@@ -85,7 +93,7 @@ public class EmployeeService {
         return mapper.toDetail(load(id));
     }
 
-    /** Creates the employee and their first ({@code NEW_HIRE}) salary row in one transaction. */
+    /** Creates the employee, their first ({@code NEW_HIRE}) salary row and a CREATE audit entry in one transaction. */
     @Transactional
     public EmployeeDetailResponse create(CreateEmployeeRequest request) {
         if (request.hireDate().isAfter(today())) {
@@ -103,6 +111,21 @@ public class EmployeeService {
         Employee employee = employees.save(Employee.hire(codeGenerator.next(), personal, country, job,
                 request.hireDate(), request.startingSalary(), now));
         salaryHistory.save(SalaryHistory.forNewHire(employee, currentUser.username(), now));
+        auditService.record(new AuditEvent(AuditAction.CREATE, AuditEntityType.EMPLOYEE, employee.getId(),
+                employee.getId(),
+                AuditChanges.create()
+                        .set("employeeCode", employee.getEmployeeCode())
+                        .set("firstName", employee.getFirstName())
+                        .set("lastName", employee.getLastName())
+                        .set("email", employee.getEmail())
+                        .set("country", country.getCode())
+                        .set("department", job.department().getName())
+                        .set("jobTitle", job.jobTitle().getName())
+                        .set("jobLevel", job.jobLevel())
+                        .set("hireDate", employee.getHireDate())
+                        .set("salary", employee.getCurrentSalaryAmount())
+                        .set("currency", country.getCurrencyCode()),
+                now));
         return mapper.toDetail(employee);
     }
 
@@ -119,7 +142,11 @@ public class EmployeeService {
             throw ConflictException.duplicateEmail(personal.email());
         }
 
-        if (employee.updateDetails(personal, job, now())) {
+        EmployeeAuditSnapshot before = EmployeeAuditSnapshot.of(employee);
+        Instant now = now();
+        if (employee.updateDetails(personal, job, now)) {
+            auditService.record(new AuditEvent(AuditAction.UPDATE, AuditEntityType.EMPLOYEE, employee.getId(),
+                    employee.getId(), before.diff(EmployeeAuditSnapshot.of(employee)), now));
             employees.flush(); // so the response carries the incremented version
         }
         return mapper.toDetail(employee);
@@ -142,7 +169,14 @@ public class EmployeeService {
             throw new BusinessRuleException(RULE_TERMINATION_IN_FUTURE, "Termination date cannot be in the future");
         }
 
-        employee.terminate(terminationDate, now());
+        Instant now = now();
+        employee.terminate(terminationDate, now);
+        auditService.record(new AuditEvent(AuditAction.DEACTIVATE, AuditEntityType.EMPLOYEE, employee.getId(),
+                employee.getId(),
+                AuditChanges.create()
+                        .changed("status", EmployeeStatus.ACTIVE, EmployeeStatus.TERMINATED)
+                        .set("terminationDate", terminationDate),
+                now));
         employees.flush();
         return mapper.toDetail(employee);
     }

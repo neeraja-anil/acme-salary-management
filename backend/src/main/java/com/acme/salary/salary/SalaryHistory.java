@@ -48,8 +48,9 @@ public class SalaryHistory {
     @Column(name = "effective_date", nullable = false)
     private LocalDate effectiveDate;
 
+    /** Null only on a first row whose reason was not recorded (an imported salary); see V1 schema. */
     @Enumerated(EnumType.STRING)
-    @Column(name = "reason", nullable = false)
+    @Column(name = "reason")
     private SalaryChangeReason reason;
 
     @Column(name = "note")
@@ -82,6 +83,18 @@ public class SalaryHistory {
     public static SalaryHistory forNewHire(Employee employee, String changedBy, Instant changedAt) {
         return new SalaryHistory(employee, employee.getCurrentSalaryAmount(), employee.getCountry().getCurrencyCode(),
                 null, employee.getHireDate(), SalaryChangeReason.NEW_HIRE, null, changedBy, changedAt);
+    }
+
+    /**
+     * A change from the employee's current salary. Must be called before the employee's current salary
+     * is updated, so that {@code previous_amount} captures the salary being replaced.
+     */
+    public static SalaryHistory forChange(Employee employee, long newAmount, LocalDate effectiveDate,
+                                          SalaryChangeReason reason, String note, String changedBy,
+                                          Instant changedAt) {
+        String trimmedNote = note == null || note.isBlank() ? null : note.trim();
+        return new SalaryHistory(employee, newAmount, employee.getCountry().getCurrencyCode(),
+                employee.getCurrentSalaryAmount(), effectiveDate, reason, trimmedNote, changedBy, changedAt);
     }
 
     public Long getId() {

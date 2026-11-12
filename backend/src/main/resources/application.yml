@@ -7,7 +7,11 @@ spring:
     # foreign_keys: SQLite leaves FK enforcement off unless enabled per connection.
     # journal_mode=WAL: readers are not blocked while a write is in progress.
     # busy_timeout: wait up to 5s for the single writer lock instead of failing immediately.
-    url: jdbc:sqlite:${APP_DB_PATH:acme.db}?foreign_keys=true&journal_mode=WAL&busy_timeout=5000
+    # transaction_mode=IMMEDIATE: take the write lock at BEGIN. With the default (DEFERRED), two transactions
+    #   can both read and then race to write; the loser gets SQLITE_BUSY instead of waiting. IMMEDIATE makes
+    #   writers queue (then optimistic locking returns 409 if they touched the same employee). Cost: transactions
+    #   run one at a time, which is negligible for a single HR team with millisecond queries.
+    url: jdbc:sqlite:${APP_DB_PATH:acme.db}?foreign_keys=true&journal_mode=WAL&busy_timeout=5000&transaction_mode=IMMEDIATE
     hikari:
       maximum-pool-size: 4
 

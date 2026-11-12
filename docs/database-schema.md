@@ -59,7 +59,7 @@ erDiagram
         TEXT currency_code "snapshot"
         INTEGER previous_amount "nullable (first salary)"
         TEXT effective_date
-        TEXT reason
+        TEXT reason "nullable (first salary only)"
         TEXT note "nullable"
         TEXT changed_by
         TEXT changed_at
@@ -125,7 +125,7 @@ erDiagram
 | `currency_code` | TEXT | NOT NULL. A snapshot, so history stays correct even if reference data changes |
 | `previous_amount` | INTEGER | NULL for the first salary. Stored so that "% change" and "recent raises" need no self-join |
 | `effective_date` | TEXT | NOT NULL. Between the previous salary's effective date and today, inclusive |
-| `reason` | TEXT | NOT NULL, CHECK IN (`NEW_HIRE`,`IMPORT`,`PROMOTION`,`ANNUAL_REVIEW`,`MARKET_ADJUSTMENT`,`CORRECTION`,`OTHER`). `NEW_HIRE` and `IMPORT` are set by the system only |
+| `reason` | TEXT | CHECK IN (`NEW_HIRE`,`PROMOTION`,`ANNUAL_REVIEW`,`MARKET_ADJUSTMENT`,`CORRECTION`,`OTHER`). `NEW_HIRE` is set by the system only. NULL means "not recorded" and is allowed only on an employee's first salary (`CHECK (reason IS NOT NULL OR previous_amount IS NULL)`): an imported salary whose reason HR didn't know. How a row got into the system is not a reason; the audit log records that (`CREATE` vs `IMPORT`) |
 | `note` | TEXT | NULL, ≤ 500 characters. Required when the reason is `OTHER` |
 | `changed_by` | TEXT | NOT NULL. Username taken from the authenticated session |
 | `changed_at` | TEXT | NOT NULL. Server timestamp |
@@ -140,7 +140,7 @@ The current salary is the latest row ordered by `(effective_date DESC, id DESC)`
 | `entity_id` | INTEGER | ID of the employee or salary_history row |
 | `employee_id` | INTEGER | FK → `employee`. Always set, so an employee's full trail is one indexed query |
 | `action` | TEXT | CHECK IN (`CREATE`,`IMPORT`,`UPDATE`,`DEACTIVATE`,`SALARY_CHANGE`) |
-| `changes` | TEXT (JSON) | Only the fields that changed: `{"departmentId":{"from":3,"to":5}}` |
+| `changes` | TEXT (JSON) | Only the fields that changed, with lookups by name: `{"department":{"from":"Sales","to":"Marketing"}}`. A value with no previous state has only `to` |
 | `performed_by` | TEXT | NOT NULL. Session username, or `system-seed` for seeded rows |
 | `performed_at` | TEXT | NOT NULL |
 

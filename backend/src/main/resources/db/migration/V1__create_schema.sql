@@ -65,11 +65,14 @@ CREATE TABLE salary_history (
     currency_code   TEXT    NOT NULL,
     previous_amount INTEGER CHECK (previous_amount IS NULL OR previous_amount > 0),
     effective_date  TEXT    NOT NULL,
-    reason          TEXT    NOT NULL CHECK (reason IN ('NEW_HIRE', 'IMPORT', 'PROMOTION', 'ANNUAL_REVIEW',
-                                                      'MARKET_ADJUSTMENT', 'CORRECTION', 'OTHER')),
+    -- Why the pay is this amount. NULL means "not recorded", which is only possible on an employee's
+    -- first row (an imported salary whose reason HR did not know); every later change has a reason.
+    reason          TEXT    CHECK (reason IS NULL OR reason IN ('NEW_HIRE', 'PROMOTION', 'ANNUAL_REVIEW',
+                                                               'MARKET_ADJUSTMENT', 'CORRECTION', 'OTHER')),
     note            TEXT    CHECK (note IS NULL OR length(note) <= 500),
     changed_by      TEXT    NOT NULL,
-    changed_at      TEXT    NOT NULL
+    changed_at      TEXT    NOT NULL,
+    CHECK (reason IS NOT NULL OR previous_amount IS NULL)
 );
 
 CREATE TRIGGER salary_history_no_update BEFORE UPDATE ON salary_history

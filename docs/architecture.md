@@ -91,6 +91,8 @@ acme-salary-management/
 - **Errors:** one `@RestControllerAdvice` maps exceptions to RFC 7807 `ProblemDetail` responses (see `api-contracts.md` §2).
 - **Time:** an injected `java.time.Clock` is used everywhere instead of `LocalDate.now()`, so date rules ("effective date not in the future") can be tested deterministically.
 - **Optimistic locking:** `employee.version` (JPA `@Version`) blocks lost updates when two tabs edit the same employee.
+- **Audit in the same transaction:** `AuditService.record` uses `Propagation.MANDATORY`, so it fails if called outside a transaction. An audit entry is always committed or rolled back together with the change it describes.
+- **SQLite write locking:** transactions start in `IMMEDIATE` mode, so writers queue for SQLite's single write lock instead of racing for it. In the default mode, two concurrent writes could both read first, and the second one would then fail with `SQLITE_BUSY` instead of waiting. Concurrent changes to the *same* employee still return `409` through optimistic locking.
 
 ## 4. Key flow: changing a salary
 
@@ -160,7 +162,7 @@ flowchart LR
     u --> r{"All rows valid?"}
     r -- "no" --> e["Show errors by row and column<br/>HR fixes the file and re-uploads"] --> u
     r -- "yes" --> i["Confirm import<br/>POST /import (same file)"]
-    i --> tx["One transaction:<br/>employees + IMPORT salary rows + audit entries"]
+    i --> tx["One transaction:<br/>employees + first salary rows + IMPORT audit entries"]
 ```
 
 - **Stateless:** preview stores nothing. The confirm step re-uploads the same file and validates it again before saving, so there are no temporary files to manage, and nothing can change between preview and import.
@@ -168,6 +170,7 @@ flowchart LR
 - **Parsing:** Apache Commons CSV (RFC 4180, so quoted fields and commas inside names work). A UTF-8 byte-order mark is stripped. Department and job title names are matched case-insensitively against the lookup tables.
 - **Performance:** 10,000 rows are validated in memory, using lookups loaded once and a single query for existing emails, then written with JDBC batch inserts. This should take a few seconds, so the request can be synchronous with no job queue.
 - **Error report:** every invalid row is counted, but at most 500 error details are returned, so a completely wrong file doesn't produce a huge response.
+- **Reason vs. source:** a salary reason says *why* the pay is what it is, so there is no `IMPORT` reason. The imported row gets `NEW_HIRE`, the optional `salary_reason` from the file, or no reason ("not recorded"). *How* the employee got into the system is recorded by the `IMPORT` audit entry.
 - **Same structure as the seed:** the seeder can write `samples/employees-sample.csv` in the import format. That gives the demo a ready-made file and gives the tests a realistic input.
 
 ## 9. Testing strategy
@@ -189,6 +192,8 @@ Tests use a fixed `Clock` and fixed seeds and never call the network, so they ar
 | Serving the UI | Spring Boot serves the Angular build (same origin) | Separate frontend server + API | No CORS, safer cookies, one build artifact |
 | Auth | Server session + CSRF | JWT in localStorage | Same origin, revocable, and no tokens exposed to XSS |
 | Current salary | Denormalised on `employee`, updated in the same transaction | "Latest history row" sub-query | Fast directory sort and filter by salary, and simpler analytics SQL |
+| SQLite transaction mode | `IMMEDIATE` (write lock at BEGIN) | Default `DEFERRED`; retrying on `SQLITE_BUSY` | Concurrent writers queue instead of failing. Transactions run one at a time, which is negligible for one HR team with millisecond queries |
+| Salary rules | Plain `SalaryChangePolicy` class plus a bean-validation constraint | Rules inside the service | Rules can be unit-tested without Spring or a database, and request-shape errors come back as field errors |
 | Median/percentiles | Java over sorted group values | SQL window functions | Simpler, unit-testable, and fast enough at 10k |
 | Money storage | `INTEGER` whole currency units | `REAL` / decimal-as-text | SQLite has no DECIMAL type. Annual salaries are agreed in whole units, and integers avoid rounding errors. |
 | CSV import | Preview then all-or-nothing import, stateless | Partial import (skip bad rows); server-side staging table | A migration must be complete and correct, and re-uploading is cheap at 10k rows |

@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -58,6 +59,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("Data integrity violation on {}: {}", request.getRequestURI(), ex.getMostSpecificCause().getMessage());
         return problem(HttpStatus.CONFLICT, "Conflict",
                 "The change conflicts with existing data. Reload and try again.", "DATA_CONFLICT", request);
+    }
+
+    /**
+     * The database stayed locked by another writer for longer than the busy timeout. Nothing was saved,
+     * so the client can safely retry.
+     */
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    ResponseEntity<ProblemDetail> handleDatabaseBusy(PessimisticLockingFailureException ex,
+                                                     HttpServletRequest request) {
+        log.warn("Database busy on {} {}: {}", request.getMethod(), request.getRequestURI(),
+                ex.getMostSpecificCause().getMessage());
+        ProblemDetail problem = problem(HttpStatus.SERVICE_UNAVAILABLE, "Busy",
+                "The system is busy saving another change. Please try again.", "DATABASE_BUSY", request);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).header(HttpHeaders.RETRY_AFTER, "1").body(problem);
     }
 
     @ExceptionHandler(Exception.class)

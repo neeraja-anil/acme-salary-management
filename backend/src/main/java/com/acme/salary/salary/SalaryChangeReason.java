@@ -1,9 +1,14 @@
 package com.acme.salary.salary;
 
-/** Why a salary row exists. {@code NEW_HIRE} and {@code IMPORT} are set by the system only. */
+/**
+ * Why a salary is the amount it is. {@code NEW_HIRE} is set by the system only (the first salary of an
+ * employee added in the app, or an imported salary that is still the starting salary).
+ * <p>
+ * How a row got into the system (entered in the app or imported) is not a reason; the audit log records
+ * that ({@code CREATE} vs {@code IMPORT}).
+ */
 public enum SalaryChangeReason {
     NEW_HIRE(false),
-    IMPORT(false),
     PROMOTION(true),
     ANNUAL_REVIEW(true),
     MARKET_ADJUSTMENT(true),

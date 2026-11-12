@@ -50,6 +50,7 @@ Errors follow **RFC 7807 Problem Details** (`application/problem+json`), plus a 
 | 422 | `IMPORT_HAS_ERRORS` | An import was confirmed but some rows are invalid. The body includes the same report as preview |
 | 422 | `BUSINESS_RULE_VIOLATION` | The input is valid but breaks a rule. `detail` explains which; `rule` names it (see §5) |
 | 405 / 415 | `METHOD_NOT_ALLOWED` / `UNSUPPORTED_MEDIA_TYPE` | Wrong HTTP method or content type |
+| 503 | `DATABASE_BUSY` | Another change held the database lock for more than 5 s. Nothing was saved; retry (a `Retry-After` header is sent) |
 | 500 | `INTERNAL_ERROR` | Unexpected error. No stack trace is returned; details are logged on the server |
 
 **400 vs 422:** `400` means the request is malformed. `422` means the request is well-formed but not allowed (for example, an effective date before the current one). The UI can then show field errors for 400 and a message banner for 422.
@@ -92,7 +93,7 @@ A single call returns all lookups. The UI fetches it once and caches it for filt
   "fxRates":     [ { "currency": "EUR", "rateToUsd": "1.0850", "asOf": "2026-01-01" } ]
 }
 ```
-`NEW_HIRE` and `IMPORT` are set by the system only, so they are not in `salaryChangeReasons`.
+`NEW_HIRE` is set by the system only, so it is not in `salaryChangeReasons`.
 
 ---
 
@@ -229,6 +230,17 @@ UTF-8 (a byte-order mark is allowed), comma-separated, RFC 4180 quoting, with a 
 | `annual_salary` | ✅ | `78000` | Whole number, > 0 |
 | `currency` | ✅ | `EUR` | Must equal the country's currency. This catches salaries entered in the wrong currency |
 | `salary_effective_date` | ➖ | `2025-04-01` | Defaults to `hire_date`. Must be between `hire_date` and today |
+| `salary_reason` | ➖ | `ANNUAL_REVIEW` | Why the current salary is what it is: `PROMOTION`, `ANNUAL_REVIEW`, `MARKET_ADJUSTMENT` or `CORRECTION`. Only allowed when `salary_effective_date` is after `hire_date`. (`OTHER` is not accepted because it needs a note, and the file has no note column) |
+
+**Reason stored on the imported salary row:**
+
+| `salary_effective_date` | `salary_reason` | Stored `reason` |
+|---|---|---|
+| equals `hire_date` (or blank) | must be blank | `NEW_HIRE`: they are still on their starting salary |
+| after `hire_date` | given | that value |
+| after `hire_date` | blank | `null`, shown as *Not recorded* |
+
+The row's `previous_amount` is always `null`: history starts at the import, so there is no earlier salary to compare with.
 
 ### `GET /api/employees/import/template`
 Returns `text/csv` (`employees-import-template.csv`): the header row plus one example row.
@@ -265,7 +277,7 @@ The same `multipart/form-data` file. The server validates it again (it keeps not
 // 201 Created
 { "fileName": "acme-germany.csv", "importedCount": 1250 }
 ```
-Each imported employee gets an employee code, a salary row with `reason = IMPORT`, and an `IMPORT` audit entry with `performedBy` set to the session user.
+Each imported employee gets an employee code, a first salary row (reason as in the table above), and an `IMPORT` audit entry with `performedBy` set to the session user. The audit entry, not the salary reason, is what records that the employee came from a file.
 
 Errors: 400 `INVALID_FILE`, 413 `FILE_TOO_LARGE`, 422 `IMPORT_HAS_ERRORS` (body includes the preview report).
 
@@ -310,7 +322,7 @@ The list is not paginated, because one employee has only a handful of rows.
 
 | Rule | Error |
 |---|---|
-| `amount` > 0 and ≤ 100,000,000; `reason` is a known value; `note` ≤ 500 characters | 400 `VALIDATION_FAILED` |
+| `amount` > 0 and ≤ 100,000,000; `reason` is a user-selectable value (not `NEW_HIRE`); `note` ≤ 500 characters | 400 `VALIDATION_FAILED` |
 | `note` required when `reason = OTHER` | 400 `VALIDATION_FAILED` |
 | `effectiveDate` earlier than the current salary's effective date | 422, `rule: EFFECTIVE_DATE_BEFORE_CURRENT` |
 | `effectiveDate` in the future | 422, `rule: EFFECTIVE_DATE_IN_FUTURE` |
@@ -333,8 +345,8 @@ Paged, newest first.
       "entityType": "EMPLOYEE",
       "entityId": 42,
       "changes": {
-        "jobTitleId": { "from": 1, "to": 4 },
-        "jobLevel":   { "from": "L3", "to": "L4" }
+        "jobTitle": { "from": "Software Engineer", "to": "Engineering Manager" },
+        "jobLevel": { "from": "L3", "to": "L4" }
       },
       "performedBy": "hr.manager",
       "performedAt": "2026-11-01T08:30:00Z"
@@ -343,6 +355,19 @@ Paged, newest first.
   "page": 0, "size": 20, "totalElements": 5, "totalPages": 1
 }
 ```
+
+**What each action records in `changes`:**
+
+| Action | `entityType` / `entityId` | Fields |
+|---|---|---|
+| `CREATE` | EMPLOYEE / employee id | Every initial value, as `{"to": …}` (no `from`): code, names, email, country, department, job title, level, hire date, salary, currency |
+| `UPDATE` | EMPLOYEE / employee id | Only the fields that changed. A save with no real change writes no entry |
+| `DEACTIVATE` | EMPLOYEE / employee id | `status` ACTIVE → TERMINATED, `terminationDate` |
+| `SALARY_CHANGE` | SALARY / salary_history id | `amount` and `effectiveDate` from → to; `currency`, `reason`, `note` as `{"to": …}` |
+
+Department and job title are recorded **by name**. The audit trail is a historical record, so it should read correctly even if a lookup is renamed later.
+
+Errors: 404 `NOT_FOUND` (unknown employee), 400 `INVALID_PARAMETER` (page/size out of range).
 
 ---
 
@@ -410,7 +435,7 @@ All three parameters are optional. Rows are grouped by title × level. As above,
 Bands with fewer than 3 people return `"lowSample": true` so that the UI can flag them. A median of 1–2 people is not a reliable band.
 
 ### `GET /api/analytics/recent-changes?days=30&page=0&size=25` *(US-15)*
-`days` is 1–365 (default 30). Changes are selected by `effectiveDate`. `NEW_HIRE` and `IMPORT` rows are excluded, because a starting or migrated salary is not a raise.
+`days` is 1–365 (default 30). Changes are selected by `effectiveDate`. Only rows with a `previousAmount` count: an employee's first salary (hired in the app or imported) is a starting point, not a change, so it is excluded without needing a special reason.
 ```json
 {
   "days": 30,

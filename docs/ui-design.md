@@ -154,7 +154,7 @@ Material components: `mat-toolbar`, `mat-sidenav` (collapses to a menu icon on n
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 - **Details tab:** email, country and currency, department, job title, level, hire date, and termination date if any.
-- **Salary history tab:** a table, newest first, with columns Effective date · Amount · % change · Reason · Note · Changed by · Changed at. A small line chart above it shows salary over time.
+- **Salary history tab:** a table, newest first, with columns Effective date · Amount · % change · Reason · Note · Changed by · Changed at. A missing reason (possible only on an imported first salary) shows as *Not recorded*. A small line chart above it shows salary over time.
 - **Audit log tab:** a paged list of entries such as *"1 Nov 2026 08:30, hr.manager: Job title Software Engineer → Engineering Manager, Level L3 → L4"*.
 - **Terminated employees:** the status chip says *Terminated*. The Edit, Change salary and Deactivate buttons are hidden, and a banner explains that the record is read-only.
 

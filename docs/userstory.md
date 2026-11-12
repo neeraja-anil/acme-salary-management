@@ -115,7 +115,8 @@ As an HR manager, I want to upload our existing employee spreadsheet as a CSV fi
 - I can import only when every row is valid. The import is all-or-nothing, in one transaction.
 - Each row goes through the same rules as "Add employee" (US-05). In addition, an email must not already exist in the system or appear twice in the file.
 - Department and job title are matched by name (case-insensitive), as they appear in the spreadsheets. The currency column must match the country's currency, which catches salaries entered in the wrong currency.
-- Every imported employee gets an employee code, a first salary record (reason *Import*) and an audit entry with my username.
+- An optional `salary_reason` column says why the current salary is what it is (for example *Annual Review*), when it was set after the hire date. If the salary is still the starting salary, the reason is *New Hire*; if I leave it blank, it shows as *Not recorded*.
+- Every imported employee gets an employee code, a first salary record and an audit entry (*Imported*) with my username. Imported salaries are not counted as recent raises.
 - Files are limited to 5 MB and 10,000 rows. UTF-8 files from Excel, including the byte-order mark Excel adds, are accepted.
 
 ---
