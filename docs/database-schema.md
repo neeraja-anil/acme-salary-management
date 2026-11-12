@@ -196,8 +196,8 @@ BEGIN SELECT RAISE(ABORT, 'salary_history is append-only'); END;
 | Table | Rows |
 |---|---|
 | `employee` | 10,000 |
-| `salary_history` | ~25,000 (1–4 per employee) |
-| `audit_log` | ~25,000 (one per seeded salary row, plus a create row per employee) |
+| `salary_history` | 21,507 (1–4 per employee) |
+| `audit_log` | 22,004 (a create row per employee, one per later salary row, one per leaver) |
 | Reference tables | < 100 |
 
-The database file should be roughly 10–15 MB.
+Measured on the default seed (`Random(42)`): the database file is about 13 MB, and seeding takes about a second.

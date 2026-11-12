@@ -41,3 +41,16 @@ management:
     web:
       exposure:
         include: health
+
+app:
+  # Demo data (US-17). Runs at start-up only when the employee table is empty, so restarts never duplicate it.
+  # To start over, delete the SQLite file (acme.db) and restart. Turn off with APP_SEED_ENABLED=false.
+  seed:
+    enabled: ${APP_SEED_ENABLED:true}
+    employees: ${APP_SEED_EMPLOYEES:10000}
+    random-seed: 42                 # fixed, so every run produces identical data
+    reference-date: 2026-11-01      # the "today" the data is built around; not now(), for the same reason
+    # Also write a sample file in the HR import format, e.g. APP_SEED_SAMPLE_CSV=samples/employees-sample.csv.
+    # Its rows are extra people, so it imports cleanly into a seeded database. Blank = don't write one.
+    sample-csv: ${APP_SEED_SAMPLE_CSV:}
+    sample-csv-rows: 200

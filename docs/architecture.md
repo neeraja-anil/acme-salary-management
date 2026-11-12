@@ -150,10 +150,13 @@ The analytics read from `employee.current_salary_amount`, which is denormalised 
 
 ## 7. Seeding
 
-- A `seed` component inserts 10,000 employees, their salary histories (1–4 rows each) and lookup data using **JDBC batch inserts**, which takes a few seconds; JPA would save rows one by one.
-- **Deterministic:** it uses `new Random(42)` and a fixed reference date (no `now()`), so every run produces identical data, and tests and demos can rely on known values.
-- **Idempotent:** it runs on startup only when `app.seed.enabled=true` and the `employee` table is empty.
-- **Realistic pay:** base salary per country × department multiplier × level multiplier, ±15% jitter, rounded to the nearest 100 local currency units.
+- The `seed` package inserts 10,000 employees with their salary histories (1–4 rows each) and audit entries using **JDBC batch inserts** in one transaction. It takes about a second; JPA would save rows one by one. The lookups come from the V2 migration.
+- **Deterministic:** `new Random(42)` and a fixed reference date (`app.seed.reference-date`, no `now()`), so every run produces identical data, and tests and demos can rely on known values. If the reference date is ever later than today, today is used instead, so nothing is dated in the future.
+- **Idempotent:** it runs at start-up when `app.seed.enabled=true` (the default; turn it off with `APP_SEED_ENABLED=false`) and only if the `employee` table is empty. To start over, delete the SQLite file and restart.
+- **Realistic people:** weighted shares per country (US 30%, India 20%, UK 12%, …) and department (Engineering 30%, …), names suited to the country, managers and leads never below L3, hire dates up to eight years back, and about 5% leavers.
+- **Realistic pay:** base salary per country × department × job title × level, ±15% jitter, rounded to the nearest 100 local currency units. Later changes are annual reviews (+2–6%), promotions (+8–15%), market adjustments (+3–8%) and corrections (±3%), at least six months apart; the starting salary is worked back from today's, so current pay always fits the role.
+- **Same rows as the app writes:** the denormalised current salary, and audit entries in the app's own format (a `CREATE` per employee, a `SALARY_CHANGE` per later salary, a `DEACTIVATE` per leaver), all by `system-seed`.
+- **Sample CSV:** with `APP_SEED_SAMPLE_CSV=samples/employees-sample.csv` it also writes 200 rows in the import format (§8). The rows are extra people, not copies of seeded ones, so the file imports cleanly into a seeded database.
 
 ## 8. CSV import
 
