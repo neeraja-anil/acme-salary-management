@@ -1,0 +1,25 @@
+# Render Blueprint: deploys the Dockerfile as one free web service (https://render.com/docs/blueprint-spec).
+# In Render: New → Blueprint → pick this repository. You'll be asked for APP_ADMIN_PASSWORD; it is never committed.
+#
+# Free plan trade-offs (see README.md): the service sleeps after 15 minutes without visitors and takes about
+# a minute and a half to wake, and its disk is wiped on every restart, so the demo data is re-seeded each time.
+services:
+  - type: web
+    name: acme-salary-management
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      # The first super admin's password. Render asks for it when the blueprint is created.
+      - key: APP_ADMIN_PASSWORD
+        sync: false
+      # Served over HTTPS, so cookies are only sent over HTTPS.
+      - key: APP_COOKIE_SECURE
+        value: "true"
+      # HTTPS ends at Render's proxy; trust its X-Forwarded-* headers so the app knows requests were secure.
+      - key: SERVER_FORWARD_HEADERS_STRATEGY
+        value: framework

@@ -1,0 +1,14 @@
+# Keep the Docker build context small and free of local state.
+.git
+.idea
+.vscode
+**/node_modules
+frontend/dist
+frontend/.angular
+backend/target
+**/*.db
+**/*.db-shm
+**/*.db-wal
+.env
+docs
+samples

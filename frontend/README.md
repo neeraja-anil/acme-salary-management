@@ -1,6 +1,6 @@
 # ACME Salary Management – frontend
 
-Angular 21 + Angular Material. Screens and behaviour are described in [`docs/ui-design.md`](../docs/ui-design.md).
+Angular 21 + PrimeNG 21. Screens and behaviour are described in [`docs/ui-design.md`](../docs/ui-design.md).
 
 ## Run in development
 
@@ -16,10 +16,11 @@ API_TARGET=http://localhost:8081 npm start     # if the backend runs on another 
 `ng serve` forwards `/api` to the backend (`proxy.conf.mjs`), so the browser talks to one origin, as it will in
 production where Spring Boot serves the built app.
 
-## Build
+## Build and test
 
 ```bash
-npm run build      # output in dist/frontend/browser
+npm run build                  # output in dist/frontend/browser (the Docker image copies it into Spring Boot)
+npx ng test --watch=false      # unit tests (Vitest + jsdom), with the API faked by HttpTestingController
 ```
 
 ## Dependencies
