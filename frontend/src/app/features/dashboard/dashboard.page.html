@@ -1,0 +1,109 @@
+<div class="page-header">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="subtitle">How pay looks across the organisation today.</p>
+  </div>
+</div>
+
+@if (overview(); as o) {
+  <div class="stack">
+    <div class="cards">
+      <p-card>
+        <div class="kpi">
+          <div>
+            <div class="label">Headcount</div>
+            <div class="value">{{ o.headcount | number }}</div>
+            <div class="context">Active employees</div>
+          </div>
+          <span class="icon" aria-hidden="true"><i class="pi pi-users"></i></span>
+        </div>
+      </p-card>
+      <p-card>
+        <div class="kpi">
+          <div>
+            <div class="label">Annual payroll</div>
+            <div class="value">{{ o.totalPayroll | money: o.currency : 'short' }}</div>
+            <div class="context">{{ o.totalPayroll | money: o.currency }} a year</div>
+          </div>
+          <span class="icon" aria-hidden="true"><i class="pi pi-wallet"></i></span>
+        </div>
+      </p-card>
+      <p-card>
+        <div class="kpi">
+          <div>
+            <div class="label">Average salary</div>
+            <div class="value">{{ o.averageSalary | money: o.currency }}</div>
+            <div class="context">Per person, in {{ o.currency }}</div>
+          </div>
+          <span class="icon" aria-hidden="true"><i class="pi pi-calculator"></i></span>
+        </div>
+      </p-card>
+      <p-card>
+        <div class="kpi">
+          <div>
+            <div class="label">Median salary</div>
+            <div class="value">{{ o.medianSalary | money: o.currency }}</div>
+            <div class="context">Half earn more, half less</div>
+          </div>
+          <span class="icon" aria-hidden="true"><i class="pi pi-chart-line"></i></span>
+        </div>
+      </p-card>
+    </div>
+
+    @if (o.headcount === 0) {
+      <p-message severity="info" icon="pi pi-info-circle">
+        There are no active employees yet. Add one from the Employees page.
+      </p-message>
+    } @else {
+      <div class="charts">
+        <p-card header="Headcount by country" subheader="Select a bar to see those employees">
+          <div class="chart" [style.height.px]="chartHeight(o.headcountByCountry.length)">
+            <canvas baseChart type="bar" [data]="countryChart()" [options]="countryOptions"
+                    aria-label="Headcount by country. Select a bar to see those employees."></canvas>
+          </div>
+        </p-card>
+        <p-card header="Headcount by department" subheader="Select a bar to see those employees">
+          <div class="chart" [style.height.px]="chartHeight(o.headcountByDepartment.length)">
+            <canvas baseChart type="bar" [data]="departmentChart()" [options]="departmentOptions"
+                    aria-label="Headcount by department. Select a bar to see those employees."></canvas>
+          </div>
+        </p-card>
+      </div>
+    }
+
+    @if (recent(); as r) {
+      <p-card>
+        <div class="recent">
+          <span class="recent-icon" aria-hidden="true"><i class="pi pi-history"></i></span>
+          <div class="recent-text">
+            <div class="section-title">Last 30 days</div>
+            <div class="muted">
+              {{ r.summary.changeCount | number }} salary {{ r.summary.changeCount === 1 ? 'change' : 'changes' }}
+              @if (r.summary.averageChangePercent !== null) {
+                · average
+                <span [class.positive]="r.summary.averageChangePercent > 0">
+                  {{ r.summary.averageChangePercent > 0 ? '+' : '' }}{{ r.summary.averageChangePercent | number: '1.1-1' }}%
+                </span>
+              }
+            </div>
+          </div>
+          <a pButton routerLink="/insights" [queryParams]="{ tab: 'recent' }" [outlined]="true" severity="secondary">
+            View recent changes <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          </a>
+        </div>
+      </p-card>
+    }
+
+    @if (o.fxRatesAsOf) {
+      <p class="fx-note caption">
+        <i class="pi pi-info-circle" aria-hidden="true"></i>
+        USD figures use fixed exchange rates as of {{ o.fxRatesAsOf | date: 'd MMM y' }}.
+        <p-button label="View rates" [link]="true" size="small" (onClick)="showRates.set(true)" />
+      </p>
+    }
+  </div>
+
+  @if (showRates()) {
+    <app-fx-rates-dialog (closed)="showRates.set(false)" />
+  }
+}
