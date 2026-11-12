@@ -1,0 +1,126 @@
+<a pButton routerLink="/employees" [text]="true" severity="secondary" size="small" class="back">
+  <i class="pi pi-arrow-left" aria-hidden="true"></i> Employees
+</a>
+
+@if (notFound()) {
+  <p-message severity="error" icon="pi pi-times-circle">
+    <span>Employee not found. <a routerLink="/employees">Back to employees</a></span>
+  </p-message>
+}
+
+@if (employee(); as e) {
+  <div class="page-header">
+    <div class="identity">
+      <p-avatar [label]="initials(e)" shape="circle" size="xlarge" [dt]="avatarTokens" aria-hidden="true" />
+      <div>
+        <div class="title-row">
+          <h1>{{ e.firstName }} {{ e.lastName }}</h1>
+          <app-status-chip [status]="e.status" />
+        </div>
+        <p class="subtitle">
+          <span class="code">{{ e.employeeCode }}</span> · {{ e.jobTitle.name }} · {{ levelLabel(e.jobLevel) }} ·
+          {{ e.department.name }} · {{ e.country.name }}
+        </p>
+      </div>
+    </div>
+    @if (e.status === 'ACTIVE') {
+      <div class="actions">
+        <p-button label="Deactivate" icon="pi pi-user-minus" severity="danger" [text]="true" (onClick)="dialog.set('deactivate')" />
+        <a pButton [routerLink]="['/employees', e.id, 'edit']" [outlined]="true" severity="secondary">
+          <i class="pi pi-pencil" aria-hidden="true"></i> Edit
+        </a>
+        <p-button label="Change salary" icon="pi pi-wallet" (onClick)="dialog.set('salary')" />
+      </div>
+    }
+  </div>
+
+  <div class="stack">
+    @if (e.status === 'TERMINATED') {
+      <p-message severity="info" icon="pi pi-lock">
+        This employee was terminated on {{ e.terminationDate | date: 'd MMM y' }}. Their record is read-only and is
+        not included in pay analytics.
+      </p-message>
+    }
+
+    <div class="cards">
+      <p-card>
+        <div class="kpi">
+          <div>
+            <div class="label">Current salary</div>
+            <div class="value">{{ e.currentSalary.amount | money: e.currentSalary.currency }}</div>
+            <div class="context">
+              Per year, since {{ e.currentSalary.effectiveDate | date: 'd MMM y' }}
+              @if (e.currentSalary.currency !== 'USD') {
+                · ≈ {{ e.currentSalary.amountUsd | money: 'USD' }}
+              }
+            </div>
+          </div>
+          <span class="icon" aria-hidden="true"><i class="pi pi-wallet"></i></span>
+        </div>
+      </p-card>
+      <p-card>
+        <div class="kpi">
+          <div>
+            <div class="label">Hire date</div>
+            <div class="value">{{ e.hireDate | date: 'd MMM y' }}</div>
+            <div class="context">
+              @if (e.terminationDate) {
+                Left on {{ e.terminationDate | date: 'd MMM y' }}
+              } @else {
+                {{ e.country.name }} · paid in {{ e.country.currency }}
+              }
+            </div>
+          </div>
+          <span class="icon" aria-hidden="true"><i class="pi pi-calendar"></i></span>
+        </div>
+      </p-card>
+    </div>
+
+    <p-tabs value="details" [lazy]="true">
+      <p-tablist>
+        <p-tab value="details">Details</p-tab>
+        <p-tab value="history">Salary history</p-tab>
+        <p-tab value="audit">Audit log</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel value="details">
+          <p-card>
+            <dl class="facts">
+              <dt>Email</dt>
+              <dd>{{ e.email }}</dd>
+              <dt>Country</dt>
+              <dd>{{ e.country.name }} ({{ e.country.currency }})</dd>
+              <dt>Department</dt>
+              <dd>{{ e.department.name }}</dd>
+              <dt>Job title</dt>
+              <dd>{{ e.jobTitle.name }}</dd>
+              <dt>Level</dt>
+              <dd>{{ levelLabel(e.jobLevel) }}</dd>
+              <dt>Hire date</dt>
+              <dd>{{ e.hireDate | date: 'd MMM y' }}</dd>
+              @if (e.terminationDate) {
+                <dt>Termination date</dt>
+                <dd>{{ e.terminationDate | date: 'd MMM y' }}</dd>
+              }
+            </dl>
+          </p-card>
+        </p-tabpanel>
+        <p-tabpanel value="history">
+          <app-salary-history-tab [employeeId]="e.id" [refreshKey]="refreshKey()" />
+        </p-tabpanel>
+        <p-tabpanel value="audit">
+          <app-audit-tab [employeeId]="e.id" [refreshKey]="refreshKey()" />
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+
+  @switch (dialog()) {
+    @case ('salary') {
+      <app-change-salary-dialog [employee]="e" (closed)="afterDialog($event, 'Salary updated')" />
+    }
+    @case ('deactivate') {
+      <app-deactivate-dialog [employee]="e" (closed)="afterDialog($event, 'Employee deactivated')" />
+    }
+  }
+}

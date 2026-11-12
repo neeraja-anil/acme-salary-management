@@ -22,6 +22,11 @@ export const routes: Routes = [
     canDeactivate: [unsavedChangesGuard],
   },
   {
+    path: 'employees/:id',
+    title: 'Employee · ACME',
+    loadComponent: () => import('./features/employee-detail/profile.page').then((m) => m.ProfilePage),
+  },
+  {
     path: 'employees/:id/edit',
     title: 'Edit employee · ACME',
     loadComponent: () => import('./features/employees/employee-form.page').then((m) => m.EmployeeFormPage),

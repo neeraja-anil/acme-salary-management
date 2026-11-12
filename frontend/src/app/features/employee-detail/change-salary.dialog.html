@@ -1,0 +1,111 @@
+<p-dialog [header]="step() === 'edit' ? 'Change salary' : 'Confirm salary change'"
+          [visible]="visible()" (visibleChange)="visible.set($event)" (onHide)="closed.emit(outcome)"
+          [modal]="true" [draggable]="false" [closable]="!saving()" [closeOnEscape]="!saving()"
+          [style]="{ width: '540px', maxWidth: 'calc(100vw - 32px)' }">
+  @if (step() === 'edit') {
+    <div class="current">
+      <div>
+        <div class="caption">Current salary · {{ employee().firstName }} {{ employee().lastName }}</div>
+        <div class="current-amount">{{ employee().currentSalary.amount | money: employee().currentSalary.currency }}</div>
+      </div>
+      <div class="caption">Since {{ employee().currentSalary.effectiveDate | date: 'd MMM y' }}</div>
+    </div>
+
+    <form [formGroup]="form" id="salary-form" (ngSubmit)="review()" class="dialog-form" novalidate>
+      <div class="field">
+        <label for="amount">New annual salary</label>
+        <p-inputnumber inputId="amount" formControlName="amount" [min]="0" [useGrouping]="true" [autofocus]="true"
+                       [suffix]="' ' + employee().currentSalary.currency" [fluid]="true"
+                       [invalid]="show(form.controls.amount)"
+                       [ariaDescribedBy]="show(form.controls.amount) ? 'amount-error' : 'amount-hint'" />
+        @if (show(form.controls.amount)) {
+          <small class="error" id="amount-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ amountError() }}</small>
+        } @else {
+          <small class="hint" id="amount-hint">Currency is set by the employee's country</small>
+        }
+      </div>
+
+      <div class="field">
+        <label for="effectiveDate">Effective date</label>
+        <p-datepicker inputId="effectiveDate" formControlName="effectiveDate" [minDate]="minDate()" [maxDate]="maxDate"
+                      [keepInvalid]="true" placeholder="DD/MM/YYYY" [showIcon]="true" iconDisplay="input"
+                      appendTo="body" [fluid]="true" [invalid]="show(form.controls.effectiveDate)"
+                      [appDescribedBy]="show(form.controls.effectiveDate) ? 'date-error' : null" />
+        @if (show(form.controls.effectiveDate)) {
+          <small class="error" id="date-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ dateError() }}</small>
+        }
+      </div>
+
+      <div class="field">
+        <label for="reason">Reason</label>
+        <p-select inputId="reason" formControlName="reason" [options]="reasonOptions" optionLabel="label"
+                  optionValue="value" placeholder="Choose a reason" appendTo="body" [fluid]="true"
+                  [invalid]="show(form.controls.reason)"
+                  [appDescribedBy]="show(form.controls.reason) ? 'reason-error' : null" />
+        @if (show(form.controls.reason)) {
+          <small class="error" id="reason-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>Choose a reason</small>
+        }
+      </div>
+
+      <div class="field">
+        <label for="note">Note @if (!noteRequired()) {<span class="optional">(optional)</span>}</label>
+        <textarea pTextarea id="note" formControlName="note" rows="2" maxlength="500" [autoResize]="true" [fluid]="true"
+                  [invalid]="show(form.controls.note)"
+                  [appDescribedBy]="show(form.controls.note) ? 'note-error' : null"></textarea>
+        @if (show(form.controls.note)) {
+          <small class="error" id="note-error">
+            <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+            @if (form.controls.note.hasError('required')) {
+              A note is required when the reason is Other
+            } @else {
+              Note must be at most 500 characters
+            }
+          </small>
+        }
+      </div>
+    </form>
+  } @else {
+    @if (error()) {
+      <p-message severity="error" icon="pi pi-times-circle" class="confirm-error">{{ error() }}</p-message>
+    }
+
+    <div class="compare">
+      <div>
+        <div class="caption">Current</div>
+        <div class="compare-amount muted">{{ employee().currentSalary.amount | money: employee().currentSalary.currency }}</div>
+      </div>
+      <i class="pi pi-arrow-right muted" aria-hidden="true"></i>
+      <div>
+        <div class="caption">New</div>
+        <div class="compare-amount">{{ form.controls.amount.value | money: employee().currentSalary.currency }}</div>
+      </div>
+      <p-tag [value]="changeLabel()" [severity]="changePercent() >= 0 ? 'success' : 'warn'" [rounded]="true" />
+    </div>
+
+    <dl class="facts">
+      <dt>Employee</dt>
+      <dd>{{ employee().firstName }} {{ employee().lastName }} ({{ employee().employeeCode }})</dd>
+      <dt>Effective</dt>
+      <dd>{{ form.controls.effectiveDate.value | date: 'd MMM y' }}</dd>
+      <dt>Reason</dt>
+      <dd>
+        {{ reasonLabel(form.controls.reason.value) }}
+        @if (form.controls.note.value.trim()) {
+          : "{{ form.controls.note.value.trim() }}"
+        }
+      </dd>
+    </dl>
+  }
+
+  <ng-template #footer>
+    @if (step() === 'edit') {
+      <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="visible.set(false)" />
+      <button pButton type="submit" form="salary-form" [disabled]="form.invalid">
+        Review <i class="pi pi-arrow-right" aria-hidden="true"></i>
+      </button>
+    } @else {
+      <p-button label="Back" icon="pi pi-arrow-left" severity="secondary" [text]="true" (onClick)="back()" [disabled]="saving()" />
+      <p-button label="Confirm change" icon="pi pi-check" (onClick)="confirm()" [loading]="saving()" [autofocus]="true" />
+    }
+  </ng-template>
+</p-dialog>
