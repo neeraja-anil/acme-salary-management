@@ -186,7 +186,7 @@ flowchart LR
 |---|---|---|
 | Unit (backend) | JUnit 5, AssertJ, Mockito | Salary-change rules, `PayStatistics` (median of even/odd/single/empty), FX conversion, seed determinism, audit diffing, CSV row validation (bad dates, unknown country, wrong currency, duplicate emails, BOM, quoted commas) |
 | Slice/integration (backend) | `@DataJpaTest`, `@WebMvcTest`, `@SpringBootTest` + MockMvc on a temp SQLite file | Filters and paging, transaction rollback, error responses (400/401/404/409/422), security rules |
-| Frontend | Angular TestBed with Vitest (the Angular 21 default) | Directory filter ⇄ URL sync, salary dialog always asks for confirmation, auth guard |
+| Frontend | Angular TestBed with Vitest and jsdom (the Angular 21 default), with the API faked by `HttpTestingController` | Add employee (validation, the request sent, server errors under fields), CSV import (file checks, preview report, import, a 422 after the check), pay insights (which columns sort, server-side sorting of recent changes, range bars), user management (actions, confirm before disabling, duplicate usernames) and the route guards |
 
 Tests use a fixed `Clock` and fixed seeds and never call the network, so they are fast and deterministic.
 
