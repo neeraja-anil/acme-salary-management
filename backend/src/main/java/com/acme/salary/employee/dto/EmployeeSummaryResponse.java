@@ -17,6 +17,7 @@ public record EmployeeSummaryResponse(
         EmployeeStatus status,
         SalaryAmount currentSalary) {
 
-    public record SalaryAmount(Long amount, String currency) {
+    /** Annual salary in local currency, with its USD equivalent at the fixed reporting rate. */
+    public record SalaryAmount(Long amount, String currency, Long amountUsd) {
     }
 }

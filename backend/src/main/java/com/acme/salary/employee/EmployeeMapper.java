@@ -31,7 +31,8 @@ class EmployeeMapper {
                 jobTitle(e),
                 e.getJobLevel(),
                 e.getStatus(),
-                new EmployeeSummaryResponse.SalaryAmount(e.getCurrentSalaryAmount(), e.getCountry().getCurrencyCode()));
+                new EmployeeSummaryResponse.SalaryAmount(e.getCurrentSalaryAmount(), e.getCountry().getCurrencyCode(),
+                        currencyConverter.toUsd(e.getCurrentSalaryAmount(), e.getCountry().getCurrencyCode())));
     }
 
     EmployeeDetailResponse toDetail(Employee e) {

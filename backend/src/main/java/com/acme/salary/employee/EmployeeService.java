@@ -25,6 +25,7 @@ import com.acme.salary.employee.dto.EmployeeSummaryResponse;
 import com.acme.salary.employee.dto.UpdateEmployeeRequest;
 import com.acme.salary.reference.Country;
 import com.acme.salary.reference.CountryRepository;
+import com.acme.salary.reference.CurrencyConverter;
 import com.acme.salary.reference.Department;
 import com.acme.salary.reference.DepartmentRepository;
 import com.acme.salary.reference.JobLevel;
@@ -34,6 +35,7 @@ import com.acme.salary.salary.SalaryHistory;
 import com.acme.salary.salary.SalaryHistoryRepository;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,14 +61,15 @@ public class EmployeeService {
     private final EmployeeCodeGenerator codeGenerator;
     private final EmployeeMapper mapper;
     private final AuditService auditService;
+    private final CurrencyConverter currencyConverter;
     private final CurrentUser currentUser;
     private final Clock clock;
 
     public EmployeeService(EmployeeRepository employees, SalaryHistoryRepository salaryHistory,
                            CountryRepository countries, DepartmentRepository departments,
                            JobTitleRepository jobTitles, EmployeeCodeGenerator codeGenerator,
-                           EmployeeMapper mapper, AuditService auditService, CurrentUser currentUser,
-                           Clock clock) {
+                           EmployeeMapper mapper, AuditService auditService, CurrencyConverter currencyConverter,
+                           CurrentUser currentUser, Clock clock) {
         this.employees = employees;
         this.salaryHistory = salaryHistory;
         this.countries = countries;
@@ -75,6 +78,7 @@ public class EmployeeService {
         this.codeGenerator = codeGenerator;
         this.mapper = mapper;
         this.auditService = auditService;
+        this.currencyConverter = currencyConverter;
         this.currentUser = currentUser;
         this.clock = clock;
     }
@@ -82,10 +86,14 @@ public class EmployeeService {
     @Transactional(readOnly = true)
     public PageResponse<EmployeeSummaryResponse> search(EmployeeSearchCriteria criteria, int page, int size,
                                                         String sort) {
-        PageRequest pageRequest = PageRequest.of(page, size, EmployeeSort.parse(sort));
-        return PageResponse.from(
-                employees.findAll(EmployeeSpecifications.matching(criteria), pageRequest),
-                mapper::toSummary);
+        EmployeeSort.Parsed parsedSort = EmployeeSort.parse(sort);
+        Specification<Employee> specification = EmployeeSpecifications.matching(criteria);
+        if (parsedSort.bySalaryUsd()) {
+            specification = specification.and(EmployeeSpecifications.orderedBySalaryUsd(
+                    parsedSort.salaryUsdDirection(), currencyConverter.ratesToUsd()));
+        }
+        PageRequest pageRequest = PageRequest.of(page, size, parsedSort.sort());
+        return PageResponse.from(employees.findAll(specification, pageRequest), mapper::toSummary);
     }
 
     @Transactional(readOnly = true)

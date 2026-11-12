@@ -109,11 +109,11 @@ A single call returns all lookups. The UI fetches it once and caches it for filt
 | `jobLevel` | enum, repeatable | `L1`…`L5` |
 | `status` | `ACTIVE` \| `TERMINATED` \| `ALL` | default `ACTIVE` |
 | `page`, `size` | | See conventions |
-| `sort` | `name` \| `department` \| `hireDate` \| `salary`, `asc` \| `desc` | default `name,asc` |
+| `sort` | `name` \| `department` \| `hireDate` \| `salary` \| `salaryUsd`, `asc` \| `desc` | default `name,asc` |
 
 Filters combine with AND. Repeated values of one filter combine with OR.
 
-> **Note on `sort=salary`:** salaries are compared as stored, in local currency. When the results span several currencies this ordering isn't meaningful across them, so the UI suggests filtering to one country first.
+> **`sort=salary` vs `sort=salaryUsd`:** `salary` compares the stored local amounts, which isn't meaningful across currencies (₹12,00,000 would rank above $114,500). `salaryUsd` orders by the amount converted at the fixed reporting rates (`amount × rate`, computed in the query), so mixed-currency results compare fairly. The UI uses `salaryUsd` when salaries are shown in USD.
 
 ```json
 // 200 OK
@@ -129,7 +129,7 @@ Filters combine with AND. Repeated values of one filter combine with OR.
       "jobTitle": { "id": 1, "name": "Software Engineer" },
       "jobLevel": "L3",
       "status": "ACTIVE",
-      "currentSalary": { "amount": 78000, "currency": "EUR" }
+      "currentSalary": { "amount": 78000, "currency": "EUR", "amountUsd": 91260 }
     }
   ],
   "page": 0, "size": 25, "totalElements": 1243, "totalPages": 50
@@ -384,6 +384,8 @@ The **stats object** is reused by all endpoints:
 { "headcount": 1243, "min": 41000, "p25": 58200, "median": 66500, "p75": 78000, "max": 162000, "average": 69871, "total": 86849653 }
 ```
 
+Analytics cover **active employees only**. Statistics are computed as described in `architecture.md` §6 (percentiles by linear interpolation, like Excel's `PERCENTILE.INC`). Rows are returned only for groups that have employees. An unknown `country` or `jobTitleId` returns 400 `INVALID_PARAMETER`.
+
 ### `GET /api/analytics/overview` *(US-11)*
 ```json
 {
@@ -420,8 +422,8 @@ The **stats object** is reused by all endpoints:
 }
 ```
 
-### `GET /api/analytics/pay-bands?jobTitleId=1&jobLevel=L3&country=DE` *(US-14)*
-All three parameters are optional. Rows are grouped by title × level. As above, the currency is local when `country` is given and USD otherwise.
+### `GET /api/analytics/pay-bands?departmentId=1&jobTitleId=1&jobLevel=L3&country=DE` *(US-14)*
+All four parameters are optional. An unknown `departmentId` returns 400 `INVALID_PARAMETER`; a `jobTitleId` outside the given department returns no rows. Rows are grouped by title × level. As above, the currency is local when `country` is given and USD otherwise.
 ```json
 {
   "currency": "EUR",
@@ -435,10 +437,12 @@ All three parameters are optional. Rows are grouped by title × level. As above,
 Bands with fewer than 3 people return `"lowSample": true` so that the UI can flag them. A median of 1–2 people is not a reliable band.
 
 ### `GET /api/analytics/recent-changes?days=30&page=0&size=25` *(US-15)*
-`days` is 1–365 (default 30). Changes are selected by `effectiveDate`. Only rows with a `previousAmount` count: an employee's first salary (hired in the app or imported) is a starting point, not a change, so it is excluded without needing a special reason.
+`days` is 1–365 (default 30). Changes are selected by `effectiveDate`, from `today − (days − 1)` to today inclusive; the response includes `from` and `to`. Changes for employees who have since been terminated are still listed, because the change did happen. Only rows with a `previousAmount` count: an employee's first salary (hired in the app or imported) is a starting point, not a change, so it is excluded without needing a special reason.
 ```json
 {
   "days": 30,
+  "from": "2026-10-14",
+  "to": "2026-11-12",
   "summary": {
     "changeCount": 412,
     "averageChangePercent": 6.4,

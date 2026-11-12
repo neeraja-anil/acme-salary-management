@@ -31,6 +31,11 @@ public class CurrencyConverter {
         return BigDecimal.valueOf(amount).multiply(rate).setScale(0, RoundingMode.HALF_UP).longValueExact();
     }
 
+    /** Every currency's rate to USD (e.g. GBP → 1.3400). Unmodifiable. */
+    public Map<String, BigDecimal> ratesToUsd() {
+        return rates();
+    }
+
     private Map<String, BigDecimal> rates() {
         Map<String, BigDecimal> cached = ratesToUsd;
         if (cached == null) {

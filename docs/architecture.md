@@ -56,7 +56,7 @@ acme-salary-management/
 │       ├── employee/        Employee entity, repository, service, controller, DTOs, search Specification
 │       ├── salary/          SalaryHistory entity, salary-change rules, controller
 │       ├── audit/           AuditLog entity, AuditService (append-only), controller
-│       ├── analytics/       aggregation queries + PayStatistics (min/max/avg/median/percentiles)
+│       ├── analytics/       salary projection query + PayStatistics (min/max/avg/median/percentiles)
 │       ├── reference/       Country, Department, JobTitle, FxRate lookups + /api/reference
 │       ├── bulkimport/      CSV parsing (Apache Commons CSV), row validation, preview + import
 │       ├── seed/            deterministic 10k-employee generator (JDBC batch insert)
@@ -137,8 +137,9 @@ Every salary change asks for confirmation in the UI, whatever its size. The serv
 
 | Statistic | Computed in | Why |
 |---|---|---|
-| Count, sum, min, max, average | SQL `GROUP BY` over active employees | Cheap, and uses indexes |
-| Median, p25, p75 | Java `PayStatistics` over sorted salary amounts for each group | SQLite has no `MEDIAN`/`PERCENTILE`. At 10k rows the in-memory work is under 10 ms, and a pure function is easy to unit test |
+| Every statistic: count, total, min, max, average, median, p25, p75 | Java `PayStatistics` over the sorted salary amounts of each group | SQLite has no `MEDIAN`/`PERCENTILE`, and the median needs every value in the group anyway. One query loads a small projection of all active employees (country, department, title, level, amount: 10k rows), then Java groups it. One code path computes every figure, and a pure function is easy to unit test |
+| Percentile method | Linear interpolation between ranks, rounded half-up to whole units | The same method as Excel's `PERCENTILE.INC`, which is what HR will check the numbers against |
+| Recent changes (count and average % per reason) | SQL `GROUP BY reason`, plus a paged query | Only rows in the date window are read, and the list is paged |
 | USD conversion | Java, using `BigDecimal` with the `fx_rate` table | Stays exact and avoids floating-point drift from SQLite `REAL` |
 
 **Statistics are never mixed across currencies.** Any group that spans countries (org-wide figures, departments without a country filter, pay bands without a country filter) is converted to USD first. Groups within one country use local currency.
@@ -194,7 +195,8 @@ Tests use a fixed `Clock` and fixed seeds and never call the network, so they ar
 | Current salary | Denormalised on `employee`, updated in the same transaction | "Latest history row" sub-query | Fast directory sort and filter by salary, and simpler analytics SQL |
 | SQLite transaction mode | `IMMEDIATE` (write lock at BEGIN) | Default `DEFERRED`; retrying on `SQLITE_BUSY` | Concurrent writers queue instead of failing. Transactions run one at a time, which is negligible for one HR team with millisecond queries |
 | Salary rules | Plain `SalaryChangePolicy` class plus a bean-validation constraint | Rules inside the service | Rules can be unit-tested without Spring or a database, and request-shape errors come back as field errors |
-| Median/percentiles | Java over sorted group values | SQL window functions | Simpler, unit-testable, and fast enough at 10k |
+| Sorting the directory by USD salary | `ORDER BY amount × CASE currency WHEN … THEN rate END` in the query | A stored `current_salary_usd` column | Rates change only with a deployment and there are 7 currencies, so a CASE expression stays small. No extra column to keep in sync and no migration |
+| Pay statistics | All computed in Java from one projection query | SQL `GROUP BY` for count/sum/min/max plus Java for the median | One code path for every figure, unit-testable, and fast enough at 10k. A larger org would move to PostgreSQL `percentile_cont` (see section 6) |
 | Money storage | `INTEGER` whole currency units | `REAL` / decimal-as-text | SQLite has no DECIMAL type. Annual salaries are agreed in whole units, and integers avoid rounding errors. |
 | CSV import | Preview then all-or-nothing import, stateless | Partial import (skip bad rows); server-side staging table | A migration must be complete and correct, and re-uploading is cheap at 10k rows |
 | UI library | Angular Material | PrimeNG | Official Angular library, and its table, paginator and sort support server-side data |

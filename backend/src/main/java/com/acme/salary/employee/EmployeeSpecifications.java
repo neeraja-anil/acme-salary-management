@@ -1,14 +1,19 @@
 package com.acme.salary.employee;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+
+import com.acme.salary.reference.Country;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
 /** Translates {@link EmployeeSearchCriteria} into a JPA query. */
@@ -42,6 +47,25 @@ final class EmployeeSpecifications {
                 predicates.add(textSearch(root, cb, criteria.query()));
             }
             return cb.and(predicates.toArray(Predicate[]::new));
+        };
+    }
+
+    /**
+     * Orders by salary converted to USD: {@code current_salary_amount × rate}, where the rate is chosen by the
+     * country's currency with a CASE expression built from the fixed rates (7 currencies). Then by id, so
+     * paging stays stable. Adds no filter. The count query that paging runs is left unordered.
+     */
+    static Specification<Employee> orderedBySalaryUsd(Sort.Direction direction, Map<String, BigDecimal> ratesToUsd) {
+        return (root, query, cb) -> {
+            if (query.getResultType() == Long.class || query.getResultType() == long.class) {
+                return null; // count query: ordering is irrelevant
+            }
+            CriteriaBuilder.SimpleCase<String, BigDecimal> rate =
+                    cb.selectCase(root.<Country>get("country").<String>get("currencyCode"));
+            ratesToUsd.forEach(rate::when);
+            Expression<Number> salaryUsd = cb.prod(root.<Long>get("currentSalaryAmount"), rate.otherwise(BigDecimal.ONE));
+            query.orderBy(direction.isAscending() ? cb.asc(salaryUsd) : cb.desc(salaryUsd), cb.asc(root.get("id")));
+            return null;
         };
     }
 
