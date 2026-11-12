@@ -1,7 +1,9 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, finalize, throwError } from 'rxjs';
 
+import { AuthService } from './auth.service';
 import { Notify } from './notify';
 
 /** Counts requests in flight so the shell can show a progress bar. */
@@ -38,6 +40,32 @@ export const unexpectedErrorInterceptor: HttpInterceptorFn = (req, next) => {
         const message =
           error.status === 503 ? 'The system is busy. Please try again.' : 'Something went wrong. Please try again.';
         notify.error(message);
+      }
+      return throwError(() => error);
+    }),
+  );
+};
+
+/**
+ * A 401 from any API call except the sign-in endpoints means the session has gone: it timed out after
+ * 30 idle minutes, or a super admin disabled the account (US-19). Go to the sign-in page, which says so
+ * and comes back to this page afterwards. A 403 means the user isn't allowed to do that.
+ */
+export const sessionInterceptor: HttpInterceptorFn = (req, next) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const notify = inject(Notify);
+  return next(req).pipe(
+    catchError((error: unknown) => {
+      if (error instanceof HttpErrorResponse && !req.url.startsWith('/api/auth/')) {
+        if (error.status === 401) {
+          auth.sessionEnded();
+          if (!router.url.startsWith('/login')) {
+            router.navigate(['/login'], { queryParams: { returnUrl: router.url, expired: 1 } });
+          }
+        } else if (error.status === 403) {
+          notify.error("You don't have access to this.");
+        }
       }
       return throwError(() => error);
     }),

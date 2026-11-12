@@ -127,7 +127,7 @@ As an HR manager, I want to upload our existing employee spreadsheet as a CSV fi
 As an HR manager, I want to sign in with my username and password so that only authorised people can see or change salary data.
 - Every page and API endpoint except the login page requires a signed-in user. Unauthenticated API calls return `401`.
 - A wrong username or password shows a generic "Invalid credentials" message that does not reveal which one was wrong.
-- Passwords are stored only as BCrypt hashes. No real credentials are committed to the repository: the first HR manager account is created at startup from environment variables.
+- Passwords are stored only as BCrypt hashes. No real credentials are committed to the repository: the first **super admin** account is created at startup from environment variables (`APP_ADMIN_USERNAME`, `APP_ADMIN_PASSWORD`). If no password is set, a random one is generated and written to the log once.
 
 ### US-19 Sign out and session expiry (M)
 As an HR manager, I want to sign out, and to be signed out automatically after a period of inactivity, so that salary data is not left open on a shared screen.
@@ -137,3 +137,11 @@ As an HR manager, I want to sign out, and to be signed out automatically after a
 ### US-20 Changes are attributed to me (M)
 As an HR manager, I want every salary change and audit entry to record the signed-in user automatically so that the audit trail is trustworthy.
 - `changed_by` comes from the authenticated session and is never taken from the request body.
+
+### US-22 Manage HR users (M)
+As a super admin, I want to add HR managers and control who can sign in so that each person has their own account and the audit trail shows who did what.
+- There are two roles: **super admin** and **HR manager**. A super admin can do everything an HR manager can, and also manages users. HR managers can't see or reach user management (the API returns `403`).
+- A super admin can add an HR manager with a username, a name and a temporary password (10–72 characters), and share the password privately. Usernames are case-sensitive at sign-in, but two can't differ only in case.
+- A super admin can disable or enable an HR manager. A disabled user can't sign in, and an open session of theirs ends on its next request.
+- A super admin can reset an HR manager's password.
+- Super admin accounts can't be disabled or changed from the app, so the last super admin can't be locked out.

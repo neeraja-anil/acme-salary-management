@@ -32,6 +32,13 @@ spring:
 
 server:
   port: ${PORT:8080}
+  servlet:
+    session:
+      timeout: 30m                 # signed out after 30 idle minutes (US-19)
+      cookie:
+        http-only: true            # scripts can't read the session cookie
+        same-site: lax
+        secure: ${APP_COOKIE_SECURE:false}   # set true when served over HTTPS
   error:
     include-stacktrace: never
     include-message: never
@@ -54,3 +61,10 @@ app:
     # Its rows are extra people, so it imports cleanly into a seeded database. Blank = don't write one.
     sample-csv: ${APP_SEED_SAMPLE_CSV:}
     sample-csv-rows: 200
+
+  # The first super admin, created at start-up when none exists (US-18). No credentials are committed:
+  # set APP_ADMIN_PASSWORD, or leave it blank and a random password is written to the log once.
+  admin:
+    username: ${APP_ADMIN_USERNAME:admin}
+    display-name: ${APP_ADMIN_DISPLAY_NAME:Super admin}
+    password: ${APP_ADMIN_PASSWORD:}

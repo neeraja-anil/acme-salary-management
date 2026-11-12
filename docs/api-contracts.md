@@ -67,7 +67,7 @@ Called once when the app starts. It sets the `XSRF-TOKEN` cookie. → `204 No Co
 // request
 { "username": "hr.manager", "password": "••••••••" }
 // 200 OK  (sets JSESSIONID cookie)
-{ "username": "hr.manager", "displayName": "Priya Sharma", "role": "HR_MANAGER" }
+{ "id": 2, "username": "hr.manager", "displayName": "Priya Sharma", "role": "HR_MANAGER", "enabled": true, "createdAt": "2026-11-12T09:30:00Z" }
 ```
 `401 UNAUTHENTICATED` with `detail: "Invalid credentials"`. The message is the same whether the username or the password is wrong.
 
@@ -76,6 +76,27 @@ Invalidates the session. → `204 No Content`
 
 ### `GET /api/auth/me`
 Returns the current user (same shape as the login response). Returns `401` if not signed in, which the Angular auth guard uses on page load.
+
+**Roles.** `SUPER_ADMIN` can do everything `HR_MANAGER` can, and is the only role allowed under `/api/users` (others get `403 FORBIDDEN`). A user who is disabled while signed in gets `401` on their next request, because their session is ended.
+
+---
+
+## 3a. Users *(US-22, super admin only)*
+
+A user, as returned by login, `/me` and this section (the password hash is never returned):
+```json
+{ "id": 2, "username": "lena.hr", "displayName": "Lena Fischer", "role": "HR_MANAGER", "enabled": true,
+  "createdAt": "2026-11-12T09:30:00Z" }
+```
+
+| Method and path | Body | Result |
+|---|---|---|
+| `GET /api/users` | | All users, super admins first, then by username |
+| `POST /api/users` | `{ "username", "displayName", "password" }` | `201` with the new user, always an `HR_MANAGER`. Username: 3–50 letters, digits, `.`, `-` or `_`, case-sensitive and stored as entered; one that differs from an existing username only in case counts as taken. Password: 10–72 characters. A taken username is `409 DUPLICATE_USERNAME` |
+| `PATCH /api/users/{id}` | `{ "enabled": false }` | The updated user. Disabling ends any open session of theirs |
+| `PUT /api/users/{id}/password` | `{ "password" }` | `204` |
+
+Changing a super admin through these endpoints is `422 BUSINESS_RULE_VIOLATION` with `rule: "SUPER_ADMIN_PROTECTED"`.
 
 ---
 
@@ -471,6 +492,9 @@ Bands with fewer than 3 people return `"lowSample": true` so that the UI can fla
 | POST | `/api/auth/login` | US-18 |
 | POST | `/api/auth/logout` | US-19 |
 | GET | `/api/auth/me` | US-18 |
+| GET, POST | `/api/users` | US-22 |
+| PATCH | `/api/users/{id}` | US-22 |
+| PUT | `/api/users/{id}/password` | US-22 |
 | GET | `/api/reference` | All forms and filters |
 | GET | `/api/employees` | US-01, 02, 03 |
 | GET | `/api/employees/{id}` | US-04 |

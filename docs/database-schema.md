@@ -79,7 +79,7 @@ erDiagram
         TEXT username UK
         TEXT password_hash "BCrypt"
         TEXT display_name
-        TEXT role "HR_MANAGER"
+        TEXT role "SUPER_ADMIN | HR_MANAGER"
         INTEGER enabled
         TEXT created_at
     }
@@ -148,10 +148,10 @@ The current salary is the latest row ordered by `(effective_date DESC, id DESC)`
 | Column | Type | Constraints / notes |
 |---|---|---|
 | `id` | INTEGER | PK |
-| `username` | TEXT | NOT NULL, UNIQUE |
+| `username` | TEXT | NOT NULL, UNIQUE. Case-sensitive: stored as entered, and sign-in must match the case. A unique index on `username COLLATE NOCASE` (migration V4) stops two usernames that differ only in case |
 | `password_hash` | TEXT | NOT NULL, BCrypt |
 | `display_name` | TEXT | NOT NULL |
-| `role` | TEXT | NOT NULL, CHECK IN (`HR_MANAGER`). It is a column so that more roles can be added later without a schema change |
+| `role` | TEXT | NOT NULL, CHECK IN (`SUPER_ADMIN`, `HR_MANAGER`) (migration V3). A super admin can do everything an HR manager can and also manages users. The first super admin is created at start-up from environment variables |
 | `enabled` | INTEGER | NOT NULL, default 1 |
 | `created_at` | TEXT | NOT NULL |
 

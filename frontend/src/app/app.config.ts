@@ -10,8 +10,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 
 import { routes } from './app.routes';
-import { loadingInterceptor, unexpectedErrorInterceptor } from './core/http.interceptors';
-import { ReferenceDataService } from './core/reference-data';
+import { AuthService } from './core/auth.service';
+import { loadingInterceptor, sessionInterceptor, unexpectedErrorInterceptor } from './core/http.interceptors';
 import { AcmePreset } from './theme';
 
 export const appConfig: ApplicationConfig = {
@@ -19,7 +19,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     // Route parameters (e.g. :id) are passed to page components as inputs.
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([loadingInterceptor, unexpectedErrorInterceptor])),
+    provideHttpClient(withInterceptors([loadingInterceptor, sessionInterceptor, unexpectedErrorInterceptor])),
     providePrimeNG({
       theme: {
         preset: AcmePreset,
@@ -37,7 +37,8 @@ export const appConfig: ApplicationConfig = {
     // One toast and one confirm dialog live in the shell; these services drive them.
     MessageService,
     ConfirmationService,
-    // Lookups are needed on almost every screen, so load them once before the first page renders.
-    provideAppInitializer(() => inject(ReferenceDataService).load()),
+    // Before the first page: get the CSRF cookie and find out whether someone is already signed in.
+    // (Lookups load after sign-in, in the route guard, because the API only answers signed-in users.)
+    provideAppInitializer(() => inject(AuthService).start()),
   ],
 };

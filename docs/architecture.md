@@ -52,7 +52,7 @@ During development, Angular's dev server (`ng serve`) forwards `/api` calls to S
 acme-salary-management/
 ├── backend/                 Spring Boot (Maven)
 │   └── src/main/java/com/acme/salary/
-│       ├── auth/            login/logout/me, SecurityConfig, AppUser, bootstrap admin from env vars
+│       ├── auth/            login/logout/me, SecurityConfig, AppUser and roles, users API, first super admin
 │       ├── employee/        Employee entity, repository, service, controller, DTOs, search Specification
 │       ├── salary/          SalaryHistory entity, salary-change rules, controller
 │       ├── audit/           AuditLog entity, AuditService (append-only), controller
@@ -125,12 +125,15 @@ sequenceDiagram
 
 Every salary change asks for confirmation in the UI, whatever its size. The server applies every business rule itself; the UI checks are only there for a better experience.
 
-## 5. Authentication
+## 5. Authentication and roles
 
-- Spring Security uses **form-style JSON login**: `POST /api/auth/login` creates a server-side `HttpSession`, and the browser holds it in a `JSESSIONID` cookie that is `HttpOnly`, `Secure` and `SameSite=Strict`.
-- **CSRF:** `CookieCsrfTokenRepository` sets an `XSRF-TOKEN` cookie. Angular's `HttpClient` sends it back as `X-XSRF-TOKEN` automatically.
-- **Idle timeout:** 30 minutes. An unauthenticated `/api/**` call gets `401` JSON (never a redirect). The Angular interceptor sends the user to `/login`.
-- **Passwords:** BCrypt hashes. On startup, if `app_user` is empty, one HR Manager is created from the `ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables. No credentials are committed to the repo.
+- Spring Security with a **JSON login endpoint**: `POST /api/auth/login` checks the password and saves the signed-in user in a server-side `HttpSession`. The browser holds it in a `JSESSIONID` cookie that is `HttpOnly` and `SameSite=Lax`, and `Secure` when `APP_COOKIE_SECURE=true` (set it behind HTTPS). Signing in issues a new session id and a new CSRF token.
+- **CSRF:** a readable `XSRF-TOKEN` cookie (`csrf().spa()`). Angular's `HttpClient` sends it back as `X-XSRF-TOKEN` on every change. Sign-out clears it, so the app fetches a fresh one before each sign-in.
+- **Idle timeout:** 30 minutes. An unauthenticated `/api/**` call gets `401` JSON (never a redirect), and a forbidden one `403`. The Angular interceptor sends the user to `/login`.
+- **Two roles:** `SUPER_ADMIN` can do everything `HR_MANAGER` can, and is the only role allowed under `/api/users`, where it adds, disables, enables and resets HR managers. Super admin accounts can't be changed through the API.
+- **Disabled users** are signed out on their next request: a small filter checks on every request that the signed-in user still exists and is enabled. That is one indexed lookup, which is negligible here.
+- **Passwords:** BCrypt hashes, 10–72 characters (BCrypt reads only the first 72 bytes). On start-up, if there is no super admin, one is created from `APP_ADMIN_USERNAME` (default `admin`) and `APP_ADMIN_PASSWORD`. Without a password, a random one is generated and written to the log once. No credentials are committed to the repo.
+- **Attribution:** `CurrentUser` reads the username from the session, so `changed_by` and audit entries can't be forged from a request body. Work outside a request is attributed to `system`.
 - **Trade-off:** sessions are held in memory, so restarting the application signs users out. That is acceptable for a single instance. Spring Session (JDBC) would fix it if ever needed.
 
 ## 6. Analytics approach

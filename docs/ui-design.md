@@ -4,7 +4,7 @@ Related docs: [`userstory.md`](./userstory.md) · [`api-contracts.md`](./api-con
 
 **Stack:** Angular 21 (standalone components, signals) with **PrimeNG 21** (Aura theme), and charts with ng2-charts (Chart.js).
 
-> **Built so far (Phase 4):** dashboard, directory, profile with tabs, add/edit form, change-salary and deactivate dialogs, and pay insights. Sign in (§4.1), the user name and Sign out in the top bar, the auth guard and CSV import (§4.8) are designed here but not built yet. Export CSV (US-16, *Could*) is not built.
+> **Built so far:** sign in, dashboard, directory, profile with tabs, add/edit form, change-salary and deactivate dialogs, pay insights, and user management for super admins. CSV import (§4.8) is designed here but not built yet. Export CSV (US-16, *Could*) is not built.
 **Target:** desktop first (the HR manager works at a laptop). The layout stays usable on tablets.
 
 ---
@@ -23,8 +23,9 @@ Related docs: [`userstory.md`](./userstory.md) · [`api-contracts.md`](./api-con
 | *(dialog on profile)* | Change salary | US-08 | `POST /employees/{id}/salaries` |
 | *(dialog on profile)* | Deactivate employee | US-07 | `POST /employees/{id}/deactivate` |
 | `/insights` | Pay insights (tabs: By country · By department · By job title · Recent changes) | US-12, 13, 14, 15 | `GET /analytics/*` |
+| `/users` | Users (super admins only) | US-22 | `GET /users`, `POST /users`, `PATCH /users/{id}`, `PUT /users/{id}/password` |
 
-Every route except `/login` is protected by an **auth guard**. Unknown routes redirect to `/dashboard`.
+Every route except `/login` is protected by an **auth guard**; `/users` also needs a super admin (anyone else lands on the dashboard). Unknown routes redirect to `/dashboard`.
 
 ## 2. Navigation
 
@@ -57,15 +58,19 @@ flowchart LR
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ ACME Salary Management                           Priya Sharma  [Sign out]│
-├───────────────┬──────────────────────────────────────────────────────────┤
+│ ▣ ACME        │                                                          │
+│ Salary mgmt   │                                                          │
+├───────────────┤                   <page content>                         │
 │ ▸ Dashboard   │                                                          │
-│ ▸ Employees   │                   <page content>                         │
+│ ▸ Employees   │                                                          │
 │ ▸ Pay insights│                                                          │
+│ ▸ Users       │  ← super admins only                                     │
 │               │                                                          │
+│ (PS) Priya S. │                                                          │
+│ HR manager [⇥]│  ← signed-in user and Sign out                           │
 └───────────────┴──────────────────────────────────────────────────────────┘
 ```
-A fixed side navigation with the app name; below 900px it becomes a drawer (`p-drawer`) opened from a top bar. A thin `p-progressbar` runs along the top of the page while requests are loading. The shell also holds the app's one toast (`p-toast`) and confirm dialog (`p-confirmdialog`).
+A fixed side navigation with the app name, and the signed-in user's name, role and a Sign out button at the bottom. Below 900px it becomes a drawer (`p-drawer`) opened from a top bar. A thin `p-progressbar` runs along the top of the page while requests are loading. The app's one toast (`p-toast`) and confirm dialog (`p-confirmdialog`) sit in the app root, so they work on the sign-in page too.
 
 ---
 
@@ -85,7 +90,14 @@ A fixed side navigation with the app name; below 900px it becomes a drawer (`p-d
               └──────────────────────────────┘
 ```
 - If the user was sent here because their session expired, the page shows: *"Your session expired. Please sign in again."*
-- After sign-in, the user goes back to the page they were on (`?returnUrl=`) or to `/dashboard`.
+- After sign-in, the user goes back to the page they were on (`?returnUrl=`, only paths inside the app) or to `/dashboard`.
+- A disabled account gets the same *"Invalid credentials"* message, so the page never reveals which accounts exist.
+
+### 4.10 Users (`/users`, super admins only)
+- **Table:** name and username, role (Super admin / HR manager), status (Active / Disabled), date added, and actions.
+- **Add HR user** (page action): a dialog with Username, Name and Temporary password (at least 10 characters, shared privately). A taken username shows under the field.
+- **Row actions for HR managers:** *Reset password* (a dialog with the new password) and *Disable* / *Enable*. Disabling asks first, because it signs the person out straight away.
+- **Super admin rows** show *"Can't be changed here"* instead of actions.
 
 ### 4.2 Dashboard (`/dashboard`)
 ```

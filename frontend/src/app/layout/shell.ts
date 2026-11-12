@@ -1,21 +1,22 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DrawerModule } from 'primeng/drawer';
 import { MessageModule } from 'primeng/message';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { map } from 'rxjs';
 
+import { AuthService } from '../core/auth.service';
 import { LoadingState } from '../core/http.interceptors';
 import { ReferenceDataService } from '../core/reference-data';
 
 /**
- * Side navigation, the page area, and the app-wide toast and confirm dialog (ui-design.md section 3).
+ * Side navigation with the signed-in user and Sign out, and the page area (ui-design.md section 3).
  * Below 900px the navigation moves into a drawer opened from a top bar.
  */
 @Component({
@@ -25,12 +26,12 @@ import { ReferenceDataService } from '../core/reference-data';
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
+    AvatarModule,
     ButtonModule,
-    ConfirmDialogModule,
     DrawerModule,
     MessageModule,
     ProgressBarModule,
-    ToastModule,
+    TooltipModule,
   ],
   template: `
     <ng-template #brand>
@@ -45,7 +46,7 @@ import { ReferenceDataService } from '../core/reference-data';
 
     <ng-template #nav>
       <nav aria-label="Main">
-        @for (link of links; track link.path) {
+        @for (link of links(); track link.path) {
           <a
             class="nav-link"
             [routerLink]="link.path"
@@ -60,10 +61,25 @@ import { ReferenceDataService } from '../core/reference-data';
       </nav>
     </ng-template>
 
+    <ng-template #account>
+      @if (auth.user(); as user) {
+        <div class="account">
+          <p-avatar [label]="initials(user.displayName)" shape="circle" [dt]="avatarTokens" aria-hidden="true" />
+          <div class="account-text">
+            <div class="account-name">{{ user.displayName }}</div>
+            <div class="account-role">{{ user.role === 'SUPER_ADMIN' ? 'Super admin' : 'HR manager' }}</div>
+          </div>
+          <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" ariaLabel="Sign out"
+                    pTooltip="Sign out" tooltipPosition="top" (onClick)="auth.logout()" />
+        </div>
+      }
+    </ng-template>
+
     @if (!isNarrow()) {
       <aside class="sidebar">
         <ng-container [ngTemplateOutlet]="brand" />
         <ng-container [ngTemplateOutlet]="nav" />
+        <ng-container [ngTemplateOutlet]="account" />
       </aside>
     } @else {
       <header class="topbar">
@@ -75,6 +91,7 @@ import { ReferenceDataService } from '../core/reference-data';
                 styleClass="nav-drawer">
         <ng-template #header><ng-container [ngTemplateOutlet]="brand" /></ng-template>
         <ng-container [ngTemplateOutlet]="nav" />
+        <ng-template #footer><ng-container [ngTemplateOutlet]="account" /></ng-template>
       </p-drawer>
     }
 
@@ -95,8 +112,6 @@ import { ReferenceDataService } from '../core/reference-data';
       </main>
     </div>
 
-    <p-toast position="top-right" />
-    <p-confirmdialog [style]="{ width: '440px', maxWidth: 'calc(100vw - 32px)' }" />
   `,
   styles: `
     :host {
@@ -104,6 +119,8 @@ import { ReferenceDataService } from '../core/reference-data';
       min-height: 100vh;
     }
     .sidebar {
+      display: flex;
+      flex-direction: column;
       position: sticky;
       top: 0;
       flex: none;
@@ -146,6 +163,31 @@ import { ReferenceDataService } from '../core/reference-data';
       display: flex;
       flex-direction: column;
       gap: 2px;
+    }
+    .sidebar nav {
+      flex: 1;
+    }
+    .account {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 4px 0 8px;
+      border-top: 1px solid var(--p-content-border-color);
+    }
+    .account-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .account-name {
+      font-weight: 600;
+      color: var(--p-surface-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .account-role {
+      font-size: 12px;
+      color: var(--p-text-muted-color);
     }
     .nav-link {
       display: flex;
@@ -222,9 +264,24 @@ export class Shell {
     { initialValue: false },
   );
 
-  protected readonly links = [
+  protected readonly auth = inject(AuthService);
+
+  /** Users is shown only to super admins (the route is guarded too, and the API checks again). */
+  protected readonly links = computed(() => [
     { path: '/dashboard', label: 'Dashboard', icon: 'pi-th-large' },
     { path: '/employees', label: 'Employees', icon: 'pi-users' },
     { path: '/insights', label: 'Pay insights', icon: 'pi-chart-bar' },
-  ];
+    ...(this.auth.isSuperAdmin() ? [{ path: '/users', label: 'Users', icon: 'pi-id-card' }] : []),
+  ]);
+
+  protected readonly avatarTokens = { root: { background: '{primary.100}', color: '{primary.700}' } };
+
+  protected initials(name: string): string {
+    return name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('');
+  }
 }

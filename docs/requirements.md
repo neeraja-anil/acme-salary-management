@@ -26,7 +26,7 @@ ACME's HR team manages salaries for **10,000 employees across several countries*
 - **Pay analytics (Must/Should):** org overview, country and department breakdowns (min, max, average, median), pay bands by title and level, and recent changes. *(US-11 to US-15)*
 - **CSV import (Must):** the HR manager downloads a template, uploads a CSV exported from their Excel workbooks, previews row-level errors, and imports all rows in one transaction. *(US-21)*
 - **Seed data (Must):** a deterministic script that creates 10,000 employees with realistic pay and salary history, for demos, tests and performance checks. It can also write a sample CSV in the import format. *(US-17)*
-- **Sign-in (Must):** username and password login, a server-side session with a 30-minute idle timeout, and sign-out. The signed-in user is recorded on every change. *(US-18 to US-20)*
+- **Sign-in and users (Must):** username and password login, a server-side session with a 30-minute idle timeout, and sign-out. The signed-in user is recorded on every change. Two roles: a super admin, who also adds, disables and resets HR managers, and HR managers. *(US-18 to US-20, US-22)*
 - **Delivery:** a Spring Boot REST API, an Angular UI, SQLite, unit and integration tests, a deployed instance and a demo video.
 
 ## 4. Key product and design decisions

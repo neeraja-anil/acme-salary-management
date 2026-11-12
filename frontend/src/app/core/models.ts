@@ -242,3 +242,23 @@ export interface RecentChanges {
   };
   changes: Page<RecentChange>;
 }
+
+// ---- Users and sign-in (api-contracts.md section 3 and 3a) ----------------------------------
+
+/** A super admin can do everything an HR manager can, and also manages users. */
+export type Role = 'SUPER_ADMIN' | 'HR_MANAGER';
+
+export interface User {
+  id: number;
+  username: string;
+  displayName: string;
+  role: Role;
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface CreateUserRequest {
+  username: string;
+  displayName: string;
+  password: string;
+}

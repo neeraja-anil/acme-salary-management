@@ -51,6 +51,12 @@
             <artifactId>hibernate-community-dialects</artifactId>
         </dependency>
 
+        <!-- Sign-in: session cookie + CSRF, BCrypt passwords -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Health endpoint -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -76,6 +82,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
