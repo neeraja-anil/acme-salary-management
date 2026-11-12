@@ -1,0 +1,27 @@
+.back {
+  margin: -8px 0 8px -12px;
+}
+
+.form {
+  max-width: 760px;
+}
+
+.section-title {
+  margin-bottom: 16px;
+}
+
+// Two columns for short related fields; one on narrow screens.
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px 16px;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+}

@@ -1,0 +1,157 @@
+@if (notFound()) {
+  <p-message severity="error" icon="pi pi-times-circle">
+    <span>Employee not found. <a routerLink="/employees">Back to employees</a></span>
+  </p-message>
+} @else {
+  <a pButton [routerLink]="cancelLink()" [text]="true" severity="secondary" size="small" class="back">
+    <i class="pi pi-arrow-left" aria-hidden="true"></i> {{ isEdit() ? 'Back to profile' : 'Employees' }}
+  </a>
+
+  <div class="page-header">
+    <div>
+      <h1>
+        @if (isEdit()) {
+          Edit {{ employee()?.firstName }} {{ employee()?.lastName }}
+        } @else {
+          Add employee
+        }
+      </h1>
+      <p class="subtitle">
+        @if (isEdit()) {
+          Salary changes are made from the profile, so every change is recorded with a reason.
+        } @else {
+          All fields are needed to add someone to the directory.
+        }
+      </p>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="save()" class="form stack" novalidate>
+    @if (employee()?.status === 'TERMINATED') {
+      <p-message severity="info" icon="pi pi-lock">This employee is terminated, so their record is read-only.</p-message>
+    }
+    @if (formError()) {
+      <p-message severity="error" icon="pi pi-times-circle">{{ formError() }}</p-message>
+    }
+
+    <p-card>
+      <h2 class="section-title">Personal</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="firstName">First name</label>
+          <input pInputText id="firstName" formControlName="firstName" autocomplete="off" [fluid]="true"
+                 [invalid]="show(form.controls.firstName)" [appDescribedBy]="errorId(form.controls.firstName, 'firstName')" />
+          @if (show(form.controls.firstName)) {
+            <small class="error" id="firstName-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ errorFor(form.controls.firstName, 'First name') }}</small>
+          }
+        </div>
+        <div class="field">
+          <label for="lastName">Last name</label>
+          <input pInputText id="lastName" formControlName="lastName" autocomplete="off" [fluid]="true"
+                 [invalid]="show(form.controls.lastName)" [appDescribedBy]="errorId(form.controls.lastName, 'lastName')" />
+          @if (show(form.controls.lastName)) {
+            <small class="error" id="lastName-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ errorFor(form.controls.lastName, 'Last name') }}</small>
+          }
+        </div>
+        <div class="field full">
+          <label for="email">Email</label>
+          <input pInputText id="email" type="email" formControlName="email" autocomplete="off" [fluid]="true"
+                 [invalid]="show(form.controls.email)" [appDescribedBy]="errorId(form.controls.email, 'email')" />
+          @if (show(form.controls.email)) {
+            <small class="error" id="email-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ errorFor(form.controls.email, 'Email') }}</small>
+          }
+        </div>
+      </div>
+    </p-card>
+
+    <p-card>
+      <h2 class="section-title">Job</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="countryCode">Country</label>
+          <p-select inputId="countryCode" formControlName="countryCode" [options]="ref.countries" optionLabel="name"
+                    optionValue="code" placeholder="Choose a country" [filter]="true" [fluid]="true"
+                    [invalid]="show(form.controls.countryCode)"
+                    [appDescribedBy]="show(form.controls.countryCode) ? 'countryCode-error' : 'countryCode-hint'" />
+          @if (show(form.controls.countryCode)) {
+            <small class="error" id="countryCode-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ errorFor(form.controls.countryCode, 'Country') }}</small>
+          } @else {
+            <small class="hint" id="countryCode-hint">
+              @if (isEdit()) {
+                Country can't be changed, because it sets the salary currency
+              } @else if (currency()) {
+                Salary currency: {{ currency() }}
+              } @else {
+                Sets the salary currency
+              }
+            </small>
+          }
+        </div>
+        <div class="field">
+          <label for="departmentId">Department</label>
+          <p-select inputId="departmentId" formControlName="departmentId" [options]="ref.departments" optionLabel="name"
+                    optionValue="id" placeholder="Choose a department" [fluid]="true"
+                    [invalid]="show(form.controls.departmentId)" [appDescribedBy]="errorId(form.controls.departmentId, 'departmentId')" />
+          @if (show(form.controls.departmentId)) {
+            <small class="error" id="departmentId-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ errorFor(form.controls.departmentId, 'Department') }}</small>
+          }
+        </div>
+        <div class="field">
+          <label for="jobTitleId">Job title</label>
+          <p-select inputId="jobTitleId" formControlName="jobTitleId" [options]="jobTitleOptions()" optionLabel="name"
+                    optionValue="id" [placeholder]="jobTitleOptions().length ? 'Choose a job title' : 'Choose a department first'"
+                    [fluid]="true" [invalid]="show(form.controls.jobTitleId)"
+                    [appDescribedBy]="errorId(form.controls.jobTitleId, 'jobTitleId')" />
+          @if (show(form.controls.jobTitleId)) {
+            <small class="error" id="jobTitleId-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ errorFor(form.controls.jobTitleId, 'Job title') }}</small>
+          }
+        </div>
+        <div class="field">
+          <label for="jobLevel">Level</label>
+          <p-select inputId="jobLevel" formControlName="jobLevel" [options]="levelOptions" optionLabel="label"
+                    optionValue="value" placeholder="Choose a level" [fluid]="true"
+                    [invalid]="show(form.controls.jobLevel)" [appDescribedBy]="errorId(form.controls.jobLevel, 'jobLevel')" />
+          @if (show(form.controls.jobLevel)) {
+            <small class="error" id="jobLevel-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ errorFor(form.controls.jobLevel, 'Level') }}</small>
+          }
+        </div>
+        @if (!isEdit()) {
+          <div class="field">
+            <label for="hireDate">Hire date</label>
+            <p-datepicker inputId="hireDate" formControlName="hireDate" [maxDate]="maxDate" [keepInvalid]="true"
+                          placeholder="DD/MM/YYYY" [showIcon]="true" iconDisplay="input" [fluid]="true"
+                          [invalid]="show(form.controls.hireDate)" [appDescribedBy]="errorId(form.controls.hireDate, 'hireDate')" />
+            @if (show(form.controls.hireDate)) {
+              <small class="error" id="hireDate-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ errorFor(form.controls.hireDate, 'Hire date') }}</small>
+            }
+          </div>
+        }
+      </div>
+    </p-card>
+
+    @if (!isEdit()) {
+      <p-card>
+        <h2 class="section-title">Starting salary</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="startingSalary">Annual salary</label>
+            <p-inputnumber inputId="startingSalary" formControlName="startingSalary" [min]="0" [useGrouping]="true"
+                           [suffix]="currency() ? ' ' + currency() : ''" [fluid]="true"
+                           [invalid]="show(form.controls.startingSalary)"
+                           [ariaDescribedBy]="show(form.controls.startingSalary) ? 'startingSalary-error' : 'startingSalary-hint'" />
+            @if (show(form.controls.startingSalary)) {
+              <small class="error" id="startingSalary-error"><i class="pi pi-exclamation-circle" aria-hidden="true"></i>{{ errorFor(form.controls.startingSalary, 'Salary') }}</small>
+            } @else {
+              <small class="hint" id="startingSalary-hint">Whole amount per year, in the country's currency</small>
+            }
+          </div>
+        </div>
+      </p-card>
+    }
+
+    <div class="form-actions">
+      <p-button type="submit" label="Save" icon="pi pi-check" [loading]="saving()" [disabled]="form.disabled" />
+      <a pButton [routerLink]="cancelLink()" severity="secondary" [text]="true">Cancel</a>
+    </div>
+  </form>
+}
