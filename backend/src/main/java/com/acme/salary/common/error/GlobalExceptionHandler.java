@@ -25,6 +25,8 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -97,6 +99,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 "VALIDATION_FAILED", request);
         problem.setProperty("errors", errors);
         return ResponseEntity.badRequest().body(problem);
+    }
+
+    /** An upload over spring.servlet.multipart.max-file-size (the CSV import's 5 MB limit). */
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(problem(HttpStatus.CONTENT_TOO_LARGE,
+                "File too large", "The file is over 5 MB. Split it into smaller files.", "FILE_TOO_LARGE", request));
+    }
+
+    /** A multipart request without the expected part, e.g. an import with no file. */
+    @Override
+    protected ResponseEntity<Object> handleMissingServletRequestPart(
+            MissingServletRequestPartException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        return ResponseEntity.badRequest().body(problem(HttpStatus.BAD_REQUEST, "Invalid file",
+                "Choose a CSV file to upload", "INVALID_FILE", request));
     }
 
     /** Constraint annotations on @RequestParam / @PathVariable failed (e.g. size > 100). */

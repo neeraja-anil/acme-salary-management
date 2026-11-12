@@ -1,0 +1,150 @@
+.back {
+  margin: -8px 0 8px -12px;
+}
+
+.steps {
+  display: block;
+  max-width: 560px;
+  margin-bottom: 24px;
+}
+
+// The upload card, with the column rules beside it on wide screens.
+.upload-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--app-gap);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .upload-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.how {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.file-input {
+  display: none;
+}
+
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 20px 0 16px;
+  padding: 28px 16px;
+  border: 2px dashed var(--p-content-border-color);
+  border-radius: 12px;
+  background: var(--p-surface-50);
+  text-align: center;
+
+  &.dragging {
+    border-color: var(--p-primary-color);
+    background: var(--p-primary-50);
+  }
+
+  .pi-file {
+    font-size: 28px;
+    color: var(--p-surface-400);
+  }
+}
+
+.file-name {
+  font-weight: 600;
+  color: var(--p-surface-900);
+  word-break: break-all;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+code {
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--p-surface-100);
+  color: var(--p-surface-800);
+}
+
+.optional {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--p-text-muted-color);
+}
+
+.rule {
+  font-size: 13px;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-gap);
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+
+  .pi {
+    align-self: center;
+    color: var(--p-text-muted-color);
+  }
+
+  &.ok .pi {
+    color: var(--positive);
+  }
+
+  &.bad .pi {
+    color: var(--negative);
+  }
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--p-surface-900);
+  font-variant-numeric: tabular-nums;
+}
+
+.strong {
+  font-weight: 600;
+}
+
+.value {
+  max-width: 240px;
+  overflow-wrap: anywhere;
+}
+
+.done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  text-align: center;
+
+  > .pi {
+    font-size: 40px;
+    color: var(--positive);
+  }
+
+  p {
+    margin: 0 0 12px;
+  }
+}

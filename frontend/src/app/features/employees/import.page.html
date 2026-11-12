@@ -1,0 +1,200 @@
+<a pButton routerLink="/employees" [text]="true" severity="secondary" size="small" class="back">
+  <i class="pi pi-arrow-left" aria-hidden="true"></i> Employees
+</a>
+
+<div class="page-header">
+  <div>
+    <h1>Import employees</h1>
+    <p class="subtitle">Add many employees at once from a CSV file. Nothing is saved until every row is valid.</p>
+  </div>
+</div>
+
+<p-stepper [value]="step()" [linear]="true" class="steps">
+  <p-step-list>
+    <p-step [value]="1" [disabled]="step() !== 2" (click)="step() === 2 && chooseAnother()">Upload</p-step>
+    <p-step [value]="2" [disabled]="true">Review</p-step>
+    <p-step [value]="3" [disabled]="true">Done</p-step>
+  </p-step-list>
+</p-stepper>
+
+@switch (step()) {
+  @case (1) {
+    <div class="upload-layout">
+      <p-card>
+        <h2 class="section-title">Upload a CSV file</h2>
+        <ol class="how">
+          <li>Download the template. It has the column names and one example row.</li>
+          <li>Fill it from your spreadsheet, one row per employee. Keep the header row.</li>
+          <li>In Excel, choose <strong>File → Save as → CSV UTF-8</strong>.</li>
+        </ol>
+        <p-button label="Download template" icon="pi pi-download" [outlined]="true" severity="secondary"
+                  (onClick)="downloadTemplate()" />
+
+        <input #fileInput type="file" accept=".csv,text/csv" class="file-input" (change)="onFileChosen($event)"
+               aria-label="CSV file" />
+        <div class="drop" [class.dragging]="dragging()" (dragover)="onDragOver($event)"
+             (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+          <i class="pi pi-file" aria-hidden="true"></i>
+          @if (file(); as f) {
+            <div class="file-name">{{ f.name }}</div>
+            <div class="caption">{{ sizeLabel(f.size) }}</div>
+            <p-button label="Choose another file" [link]="true" size="small" (onClick)="fileInput.click()" />
+          } @else {
+            <div class="file-name">Drop your CSV file here</div>
+            <div class="caption">or</div>
+            <p-button label="Choose a file" icon="pi pi-folder-open" [outlined]="true" size="small"
+                      (onClick)="fileInput.click()" />
+            <div class="caption">Up to 5 MB and 10,000 rows</div>
+          }
+        </div>
+
+        @if (fileError()) {
+          <p-message severity="error" icon="pi pi-times-circle">{{ fileError() }}</p-message>
+        }
+
+        <div class="step-actions">
+          <p-button label="Check file" icon="pi pi-arrow-right" iconPos="right" [disabled]="!file()"
+                    [loading]="checking()" (onClick)="check()" />
+        </div>
+      </p-card>
+
+      <p-card header="Columns" subheader="Column order doesn't matter; the names in the header row do.">
+        <p-table [value]="columns" size="small">
+          <ng-template #header>
+            <tr>
+              <th scope="col">Column</th>
+              <th scope="col">Rule</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-c>
+            <tr>
+              <td>
+                <code>{{ c.name }}</code>
+                @if (!c.required) {
+                  <span class="optional">(optional)</span>
+                }
+              </td>
+              <td class="rule">{{ c.rule }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  }
+
+  @case (2) {
+    @if (report(); as r) {
+      <div class="stack">
+        <div class="summary">
+          <div class="stat">
+            <span class="stat-value">{{ r.totalRows | number }}</span>
+            <span class="caption">rows in {{ r.fileName }}</span>
+          </div>
+          <div class="stat ok">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            <span class="stat-value">{{ r.validRows | number }}</span>
+            <span class="caption">valid</span>
+          </div>
+          <div class="stat" [class.bad]="r.invalidRows > 0">
+            <i class="pi pi-times-circle" aria-hidden="true"></i>
+            <span class="stat-value">{{ r.invalidRows | number }}</span>
+            <span class="caption">with errors</span>
+          </div>
+        </div>
+
+        @if (r.invalidRows > 0) {
+          <p-message severity="error" icon="pi pi-exclamation-triangle">
+            Fix these rows in your file, save it, and check it again. Nothing has been imported.
+          </p-message>
+          <p-card header="Problems" [subheader]="r.errorsTruncated
+              ? 'Showing the first 500 problems. ' + (r.invalidRows | number) + ' rows have errors in total.'
+              : 'Row numbers match the rows in your spreadsheet (the header is row 1).'">
+            <p-table [value]="r.errors" [paginator]="true" [rows]="pager.size" [first]="pager.first()"
+                     (firstChange)="pager.first.set($event)" [showCurrentPageReport]="true"
+                     [currentPageReportTemplate]="pageReport">
+              <ng-template #header>
+                <tr>
+                  <th scope="col" class="num">Row</th>
+                  <th scope="col">Column</th>
+                  <th scope="col">Value in the file</th>
+                  <th scope="col">Problem</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-e>
+                <tr>
+                  <td class="num strong">{{ e.row }}</td>
+                  <td><code>{{ e.column }}</code></td>
+                  <td class="value">{{ e.value || '(blank)' }}</td>
+                  <td>{{ e.message }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-card>
+        } @else {
+          <p-message severity="success" icon="pi pi-check-circle">
+            All {{ r.totalRows | number }} rows are valid and ready to import.
+          </p-message>
+        }
+
+        @if (r.sample.length) {
+          <p-card header="First rows, as read from your file" subheader="Check that the columns were read correctly.">
+            <p-table [value]="r.sample" size="small">
+              <ng-template #header>
+                <tr>
+                  <th scope="col" class="num">Row</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Country</th>
+                  <th scope="col">Department</th>
+                  <th scope="col">Job title</th>
+                  <th scope="col">Level</th>
+                  <th scope="col">Hire date</th>
+                  <th scope="col" class="num">Salary</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-s>
+                <tr>
+                  <td class="num muted">{{ s.row }}</td>
+                  <td>{{ s.firstName }} {{ s.lastName }}</td>
+                  <td>{{ s.email }}</td>
+                  <td>{{ s.countryCode }}</td>
+                  <td>{{ s.department }}</td>
+                  <td>{{ s.jobTitle }}</td>
+                  <td>{{ s.jobLevel }}</td>
+                  <td>{{ s.hireDate | date: 'd MMM y' }}</td>
+                  <td class="num">{{ s.annualSalary | money: s.currency }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-card>
+        }
+
+        @if (importError()) {
+          <p-message severity="error" icon="pi pi-times-circle">{{ importError() }}</p-message>
+        }
+
+        <div class="step-actions">
+          <p-button label="Choose another file" icon="pi pi-arrow-left" [text]="true" severity="secondary"
+                    [disabled]="importing()" (onClick)="chooseAnother()" />
+          <p-button [label]="'Import ' + (r.totalRows | number) + ' employees'" icon="pi pi-upload"
+                    [disabled]="r.invalidRows > 0" [loading]="importing()" (onClick)="runImport()" />
+        </div>
+      </div>
+    }
+  }
+
+  @case (3) {
+    <p-card>
+      <div class="done">
+        <i class="pi pi-check-circle" aria-hidden="true"></i>
+        <h2>{{ result()?.importedCount | number }} employees imported</h2>
+        <p class="muted">From {{ result()?.fileName }}. Each has a first salary and an "Employee imported" entry
+          in their change log.</p>
+        <div class="actions">
+          <a pButton routerLink="/employees"><i class="pi pi-users" aria-hidden="true"></i> Go to employees</a>
+          <p-button label="Import another file" [outlined]="true" severity="secondary" (onClick)="startOver()" />
+        </div>
+      </div>
+    </p-card>
+  }
+}

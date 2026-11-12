@@ -51,6 +51,13 @@
             <artifactId>hibernate-community-dialects</artifactId>
         </dependency>
 
+        <!-- CSV import (US-21): RFC 4180 parsing, so quoted fields with commas work -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.14.1</version>
+        </dependency>
+
         <!-- Sign-in: session cookie + CSRF, BCrypt passwords -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

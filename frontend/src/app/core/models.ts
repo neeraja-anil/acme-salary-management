@@ -262,3 +262,44 @@ export interface CreateUserRequest {
   displayName: string;
   password: string;
 }
+
+// ---- CSV import (api-contracts.md section 5a) -------------------------------------------------
+
+export interface ImportRowError {
+  /** The line in the file, with the header as line 1, as HR sees it in Excel. */
+  row: number;
+  column: string;
+  value: string;
+  message: string;
+}
+
+export interface ImportSampleRow {
+  row: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  countryCode: string;
+  department: string;
+  jobTitle: string;
+  jobLevel: JobLevel;
+  hireDate: string;
+  annualSalary: number;
+  currency: string;
+}
+
+export interface ImportReport {
+  fileName: string;
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  /** At most 500; `errorsTruncated` says whether there were more. */
+  errors: ImportRowError[];
+  errorsTruncated: boolean;
+  /** The first 5 valid rows, to check the columns were read correctly. */
+  sample: ImportSampleRow[];
+}
+
+export interface ImportResult {
+  fileName: string;
+  importedCount: number;
+}

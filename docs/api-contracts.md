@@ -288,7 +288,7 @@ Returns `text/csv` (`employees-import-template.csv`): the header row plus one ex
   ]
 }
 ```
-`row` is the line number in the file, with the header as line 1, so it matches what HR sees in Excel. At most 500 errors are listed; `errorsTruncated` says whether more exist. `sample` holds the first 5 valid rows so HR can check that the columns were read correctly.
+`row` is the line number in the file, with the header as line 1, so it matches what HR sees in Excel. Blank lines are skipped but still counted, and every problem in a row is listed, not just the first. Header names are matched ignoring case and spaces; extra columns are ignored. The file must be UTF-8 (Excel: *CSV UTF-8*). At most 500 errors are listed; `errorsTruncated` says whether more exist. `sample` holds the first 5 valid rows so HR can check that the columns were read correctly.
 
 Errors: 400 `INVALID_FILE`, 413 `FILE_TOO_LARGE`.
 
@@ -300,7 +300,7 @@ The same `multipart/form-data` file. The server validates it again (it keeps not
 ```
 Each imported employee gets an employee code, a first salary row (reason as in the table above), and an `IMPORT` audit entry with `performedBy` set to the session user. The audit entry, not the salary reason, is what records that the employee came from a file.
 
-Errors: 400 `INVALID_FILE`, 413 `FILE_TOO_LARGE`, 422 `IMPORT_HAS_ERRORS` (body includes the preview report).
+Errors: 400 `INVALID_FILE`, 413 `FILE_TOO_LARGE`, 422 `IMPORT_HAS_ERRORS` (the problem body has the same report as the preview in a `report` property).
 
 ---
 

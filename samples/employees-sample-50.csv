@@ -1,0 +1,51 @@
+first_name,last_name,email,country_code,department,job_title,job_level,hire_date,annual_salary,currency,salary_effective_date,salary_reason
+Jules,Fournier,jules.fournier4@acme.example,FR,Product,Product Analyst,L5,2024-07-28,95000,EUR,2026-07-09,ANNUAL_REVIEW
+Harish,Singh,harish.singh5@acme.example,IN,Engineering,DevOps Engineer,L1,2024-08-06,1120500,INR,2025-12-05,ANNUAL_REVIEW
+Ava,Mitchell,ava.mitchell5@acme.example,US,Engineering,DevOps Engineer,L1,2021-09-28,67400,USD,2022-12-19,MARKET_ADJUSTMENT
+Louise,Vincent,louise.vincent@acme.example,FR,Product,Product Manager,L3,2020-05-26,73300,EUR,2022-08-11,MARKET_ADJUSTMENT
+Henry,Miller,henry.miller6@acme.example,AU,Legal,Legal Counsel,L2,2026-10-03,147800,AUD,,
+Lucas,Clark,lucas.clark3@acme.example,GB,Sales,Sales Development Representative,L2,2019-06-07,39800,GBP,2020-10-12,CORRECTION
+Dylan,Anderson,dylan.anderson4@acme.example,US,Marketing,Marketing Specialist,L2,2026-04-26,92000,USD,,
+Sai,Bose,sai.bose2@acme.example,IN,Operations,Operations Analyst,L2,2020-06-03,1215700,INR,2021-07-28,ANNUAL_REVIEW
+Margaux,Girard,margaux.girard@acme.example,FR,Legal,Paralegal,L2,2024-02-18,41100,EUR,2024-12-23,ANNUAL_REVIEW
+Evelyn,Mitchell,evelyn.mitchell5@acme.example,US,Product,Product Manager,L1,2023-11-10,73900,USD,2026-09-18,ANNUAL_REVIEW
+Arjun,Kulkarni,arjun.kulkarni5@acme.example,IN,Design,UX Researcher,L1,2021-02-18,1000400,INR,,
+Karan,Saxena,karan.saxena5@acme.example,IN,Operations,Operations Analyst,L2,2022-05-12,1002700,INR,2022-11-09,ANNUAL_REVIEW
+Aditya,Pillai,aditya.pillai2@acme.example,IN,Engineering,DevOps Engineer,L1,2020-01-19,1182700,INR,,
+Ella,Jones,ella.jones7@acme.example,GB,Engineering,Software Engineer,L2,2025-04-26,63000,GBP,,
+Mia,Mitchell,mia.mitchell6@acme.example,US,Customer Support,Support Specialist,L3,2021-11-02,81500,USD,2022-07-13,CORRECTION
+Sophie,Klein,sophie.klein2@acme.example,DE,Engineering,DevOps Engineer,L3,2025-05-29,97000,EUR,2026-10-29,ANNUAL_REVIEW
+Ryan,Thomas,ryan.thomas7@acme.example,US,Sales,Sales Development Representative,L5,2025-04-20,120200,USD,2026-09-04,PROMOTION
+Jack,Lewis,jack.lewis5@acme.example,US,Sales,Sales Manager,L4,2020-07-21,184600,USD,2021-06-03,ANNUAL_REVIEW
+Ethan,Roberts,ethan.roberts9@acme.example,US,Customer Support,Support Specialist,L2,2020-07-30,63600,USD,2021-10-06,ANNUAL_REVIEW
+Daniel,Wright,daniel.wright6@acme.example,US,Engineering,DevOps Engineer,L3,2026-05-28,148000,USD,,
+Charlotte,King,charlotte.king4@acme.example,US,Design,UX Researcher,L3,2026-09-01,100100,USD,,
+Ava,Davis,ava.davis6@acme.example,US,Legal,Paralegal,L1,2024-05-09,60500,USD,2026-05-11,MARKET_ADJUSTMENT
+Aarav,Verma,aarav.verma2@acme.example,IN,Customer Support,Support Team Lead,L4,2023-08-15,2158600,INR,,
+Noah,Smith,noah.smith6@acme.example,US,Sales,Sales Manager,L3,2022-06-26,130900,USD,2024-12-22,ANNUAL_REVIEW
+Ruby,Anderson,ruby.anderson4@acme.example,GB,Marketing,Marketing Manager,L3,2022-02-06,70200,GBP,2023-10-08,PROMOTION
+Daniel,Nelson,daniel.nelson3@acme.example,CA,Engineering,DevOps Engineer,L2,2019-07-07,93800,CAD,2020-07-05,MARKET_ADJUSTMENT
+Ethan,Davis,ethan.davis6@acme.example,CA,Engineering,DevOps Engineer,L2,2026-09-02,97400,CAD,,
+Theo,Martin,theo.martin@acme.example,FR,Finance,Accountant,L2,2025-03-06,42900,EUR,2026-09-21,ANNUAL_REVIEW
+Ella,Thomas,ella.thomas4@acme.example,GB,Marketing,Content Strategist,L3,2020-09-26,60700,GBP,2021-10-25,ANNUAL_REVIEW
+Samuel,Smith,samuel.smith3@acme.example,US,Design,Product Designer,L3,2024-07-25,111100,USD,2026-09-02,MARKET_ADJUSTMENT
+Amelia,Hall,amelia.hall7@acme.example,US,Marketing,Marketing Specialist,L3,2022-11-23,103300,USD,2023-08-19,CORRECTION
+Isha,Chopra,isha.chopra@acme.example,IN,Operations,Operations Analyst,L1,2019-09-14,716100,INR,,
+Ruby,Williams,ruby.williams7@acme.example,GB,Design,UX Researcher,L2,2019-07-11,52400,GBP,2020-04-29,PROMOTION
+Sneha,Menon,sneha.menon5@acme.example,IN,Human Resources,HR Business Partner,L3,2026-10-06,2098900,INR,,
+Rohan,Joshi,rohan.joshi3@acme.example,IN,Operations,Office Manager,L3,2020-05-16,1111400,INR,,
+Aaron,Jackson,aaron.jackson2@acme.example,GB,Sales,Sales Development Representative,L1,2020-10-07,28600,GBP,2021-11-25,ANNUAL_REVIEW
+Felix,Schwarz,felix.schwarz2@acme.example,DE,Engineering,Software Engineer,L1,2022-02-20,47300,EUR,,
+Evelyn,Martin,evelyn.martin9@acme.example,CA,Engineering,Data Engineer,L2,2025-03-14,104900,CAD,2026-09-26,ANNUAL_REVIEW
+Emilia,Hoffmann,emilia.hoffmann@acme.example,DE,Engineering,Data Engineer,L2,2024-10-22,76700,EUR,2026-11-01,ANNUAL_REVIEW
+Jack,Martin,jack.martin5@acme.example,US,Engineering,QA Engineer,L2,2019-11-28,83200,USD,2020-12-31,ANNUAL_REVIEW
+Sneha,Naidu,sneha.naidu4@acme.example,IN,Customer Support,Support Specialist,L2,2021-01-17,855300,INR,2023-07-22,ANNUAL_REVIEW
+Margaux,Dubois,margaux.dubois@acme.example,FR,Operations,Office Manager,L3,2020-06-26,49300,EUR,2021-01-22,MARKET_ADJUSTMENT
+Akash,Gupta,akash.gupta@acme.example,IN,Engineering,Engineering Manager,L3,2022-03-20,2283500,INR,2024-01-12,MARKET_ADJUSTMENT
+Jonas,Becker,jonas.becker3@acme.example,DE,Product,Product Manager,L1,2025-02-05,52600,EUR,2026-07-16,ANNUAL_REVIEW
+Lea,Schulz,lea.schulz2@acme.example,DE,Operations,Operations Analyst,L2,2022-09-03,46900,EUR,2025-11-20,ANNUAL_REVIEW
+Olivia,Adams,olivia.adams5@acme.example,GB,Finance,Financial Analyst,L4,2019-07-11,76900,GBP,2021-02-23,PROMOTION
+Ava,Phillips,ava.phillips7@acme.example,AU,Product,Product Manager,L3,2026-10-05,160700,AUD,,
+Dylan,Jones,dylan.jones7@acme.example,US,Marketing,Marketing Specialist,L3,2020-07-03,124100,USD,2021-08-19,ANNUAL_REVIEW
+Moritz,Becker,moritz.becker5@acme.example,DE,Engineering,DevOps Engineer,L4,2026-03-23,114300,EUR,,
+Paul,Werner,paul.werner3@acme.example,DE,Engineering,DevOps Engineer,L4,2019-09-10,101200,EUR,2020-04-15,ANNUAL_REVIEW

@@ -5,7 +5,7 @@ import { unsavedChangesGuard } from './shared/unsaved-changes.guard';
 
 /**
  * Screens and routes from ui-design.md section 1. Each page is loaded on first visit.
- * Order matters: `employees/new` comes before `employees/:id`, or "new" would be read as an id.
+ * Order matters: `employees/new` and `employees/import` come before `employees/:id`, or they would be read as ids.
  */
 export const routes: Routes = [
   {
@@ -36,6 +36,11 @@ export const routes: Routes = [
         title: 'Add employee · ACME',
         loadComponent: () => import('./features/employees/employee-form.page').then((m) => m.EmployeeFormPage),
         canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: 'employees/import',
+        title: 'Import employees · ACME',
+        loadComponent: () => import('./features/employees/import.page').then((m) => m.ImportPage),
       },
       {
         path: 'employees/:id',

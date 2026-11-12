@@ -4,7 +4,7 @@ Related docs: [`userstory.md`](./userstory.md) · [`api-contracts.md`](./api-con
 
 **Stack:** Angular 21 (standalone components, signals) with **PrimeNG 21** (Aura theme), and charts with ng2-charts (Chart.js).
 
-> **Built so far:** sign in, dashboard, directory, profile with tabs, add/edit form, change-salary and deactivate dialogs, pay insights, and user management for super admins. CSV import (§4.8) is designed here but not built yet. Export CSV (US-16, *Could*) is not built.
+> **Built so far:** sign in, dashboard, directory, profile with tabs, add/edit form, change-salary and deactivate dialogs, CSV import, pay insights, and user management for super admins. Export CSV (US-16, *Could*) is not built.
 **Target:** desktop first (the HR manager works at a laptop). The layout stays usable on tablets.
 
 ---
@@ -268,7 +268,10 @@ A fixed side navigation with the app name, and the signed-in user's name, role a
 - **Preview first:** "Check file" calls `/import/preview` and saves nothing.
 - **Import:** the import button sends the **same file** to `/import`. It's enabled only when there are no errors.
 - **Large error lists:** if more than 500 errors are found, the page says *"Showing the first 500 of N errors"*.
-- **Bad files:** `INVALID_FILE` and `FILE_TOO_LARGE` show as a message in step 1.
+- **Bad files:** `INVALID_FILE` and `FILE_TOO_LARGE` show as a message in step 1. A file that isn't `.csv` or is over 5 MB is refused before uploading.
+- **Getting there:** an *Import CSV* button next to *Add employee* on the directory. Any signed-in user can import.
+- **Step 1** also lists every column with its rule, and accepts a file dropped onto the upload box.
+- **After fixing the file in Excel,** choose it again: browsers don't re-read a file that changed after it was chosen.
 
 ### 4.9 Pay insights (`/insights`): four tabs
 **By country:** one row per country.
