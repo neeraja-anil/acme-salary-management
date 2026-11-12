@@ -35,8 +35,9 @@ const MONTH_FORMAT = new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'n
         </p-card>
       }
       <p-card>
-        <p-table [value]="entries()" [loading]="!loaded()" [paginator]="true" [rows]="pager.size"
+        <p-table [value]="entries()" [loading]="!loaded()" [paginator]="true" [rows]="pager.size()"
                  [first]="pager.first()" (firstChange)="pager.first.set($event)"
+               (rowsChange)="pager.size.set($event)" [rowsPerPageOptions]="pager.sizes"
                  [showCurrentPageReport]="true" [currentPageReportTemplate]="pageReport">
           <ng-template #header>
             <tr>

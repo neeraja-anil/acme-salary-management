@@ -30,8 +30,9 @@ import { RangeLegend } from '../../shared/range-legend';
       @if (view() === 'bars') {
         <app-range-legend class="legend" />
       }
-      <p-table [value]="rows()" class="pay-table" [loading]="!loaded()" [paginator]="true" [rows]="pager.size"
-               [first]="pager.first()" (firstChange)="pager.first.set($event)" [defaultSortOrder]="-1"
+      <p-table [value]="rows()" class="pay-table" [loading]="!loaded()" [paginator]="true" [rows]="pager.size()"
+               [first]="pager.first()" (firstChange)="pager.first.set($event)"
+               (rowsChange)="pager.size.set($event)" [rowsPerPageOptions]="pager.sizes" [defaultSortOrder]="-1"
                [showCurrentPageReport]="true" [currentPageReportTemplate]="pageReport">
         <!-- Only People and Typical (USD) sort: the other figures are each in their country's currency,
              so ordering them across countries would rank rupees against dollars. -->

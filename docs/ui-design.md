@@ -333,7 +333,7 @@ Column order everywhere: People · Lowest · Typical range (middle half) · Typi
 - **Key:** `shared/range-legend.ts`, shown in the bar view.
 
 **Tables (all screens):**
-- **At most 20 rows at a time.** The directory offers 10 or 20 per page (default 20), and recent changes shows 20. Both are paged by the server. Pay tables and salary history arrive in full and are paged in the browser (`shared/paging.ts`). The audit log shows 10 entries per page. **Every table always shows its page control**, even with one page, so the count is always visible (e.g. *1 – 8 of 8*).
+- **10 rows per page by default, up to 50.** Every paged table (directory, recent changes, pay tables, salary history, users, audit log) offers 10, 20 or 50 per page in its page control, defaulting to 10 (`PAGE_SIZES` and `TABLE_PAGE_SIZE` in `shared/paging.ts`). Changing the size goes back to page 1. The directory and recent changes are paged by the server, and the directory keeps a non-default size in the URL (`?size=20`). Pay tables, salary history and users arrive in full and are paged in the browser. **Every table always shows its page control**, even with one page, so the count is always visible (e.g. *1 – 8 of 8*).
 - **Spacing:** cells have 14px top and bottom and 20px left and right padding, and tables sit 12px below their caption text.
 
 ## 5. Shared behaviour

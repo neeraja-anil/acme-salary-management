@@ -2,14 +2,14 @@ import { DatePipe, formatDate } from '@angular/common';
 import { Component, LOCALE_ID, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { CardModule } from 'primeng/card';
-import { PaginatorModule } from 'primeng/paginator';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { EMPTY, catchError, switchMap } from 'rxjs';
 
 import { EmployeesApi } from '../../core/employees.api';
 import { AuditAction, AuditEntry, JobLevel, Page, SalaryChangeReason } from '../../core/models';
 import { actionLabel, fieldLabel, levelLabel, reasonLabel } from '../../shared/labels';
 import { formatMoney } from '../../shared/money.pipe';
-import { PAGE_REPORT } from '../../shared/paging';
+import { PAGE_REPORT, PAGE_SIZES, TABLE_PAGE_SIZE } from '../../shared/paging';
 
 const ACTION_ICONS: Record<AuditAction, string> = {
   CREATE: 'pi-user-plus',
@@ -28,7 +28,7 @@ interface ChangeLine {
 const MONEY_FIELDS = new Set(['salary', 'amount']);
 const DATE_FIELDS = new Set(['hireDate', 'effectiveDate', 'terminationDate']);
 
-/** Who changed what and when (US-10), newest first, ten entries per page. */
+/** Who changed what and when (US-10), newest first, ten entries per page by default. */
 @Component({
   selector: 'app-audit-tab',
   imports: [CardModule, PaginatorModule, DatePipe],
@@ -65,9 +65,9 @@ const DATE_FIELDS = new Set(['hireDate', 'effectiveDate', 'terminationDate']);
           }
         }
       </ol>
-      @if ((page()?.totalElements ?? 0) > pageSize) {
-        <p-paginator [rows]="pageSize" [totalRecords]="page()?.totalElements ?? 0" [first]="pageIndex() * pageSize"
-                     (onPageChange)="pageIndex.set($event.page ?? 0)" [showCurrentPageReport]="true"
+      @if ((page()?.totalElements ?? 0) > pageSizes[0]) {
+        <p-paginator [rows]="pageSize()" [totalRecords]="page()?.totalElements ?? 0" [first]="pageIndex() * pageSize()"
+                     (onPageChange)="setPage($event)" [rowsPerPageOptions]="pageSizes" [showCurrentPageReport]="true"
                      [currentPageReportTemplate]="pageReport" />
       }
     </p-card>
@@ -150,10 +150,11 @@ export class AuditTab {
   readonly employeeId = input.required<number>();
   readonly refreshKey = input(0);
 
-  protected readonly pageSize = 10;
-  /** Resets to the first page whenever the employee or refresh key changes. */
+  protected readonly pageSizes = PAGE_SIZES;
+  protected readonly pageSize = signal(TABLE_PAGE_SIZE);
+  /** Resets to the first page whenever the employee, refresh key or page size changes. */
   protected readonly pageIndex = linkedSignal({
-    source: () => [this.employeeId(), this.refreshKey()],
+    source: () => [this.employeeId(), this.refreshKey(), this.pageSize()],
     computation: () => 0,
   });
   protected readonly page = signal<Page<AuditEntry> | null>(null);
@@ -161,12 +162,24 @@ export class AuditTab {
   protected readonly pageReport = PAGE_REPORT;
 
   constructor() {
-    toObservable(computed(() => ({ id: this.employeeId(), page: this.pageIndex(), key: this.refreshKey() })))
+    toObservable(
+      computed(() => ({ id: this.employeeId(), page: this.pageIndex(), size: this.pageSize(), key: this.refreshKey() })),
+    )
       .pipe(
-        switchMap(({ id, page }) => this.api.audit(id, page, this.pageSize).pipe(catchError(() => EMPTY))),
+        switchMap(({ id, page, size }) => this.api.audit(id, page, size).pipe(catchError(() => EMPTY))),
         takeUntilDestroyed(),
       )
       .subscribe((page) => this.page.set(page));
+  }
+
+  /** A new page size goes back to page 1 (see `pageIndex`). */
+  protected setPage(event: PaginatorState): void {
+    const rows = event.rows ?? this.pageSize();
+    if (rows !== this.pageSize()) {
+      this.pageSize.set(rows);
+    } else {
+      this.pageIndex.set(event.page ?? 0);
+    }
   }
 
   protected icon(action: AuditAction): string {

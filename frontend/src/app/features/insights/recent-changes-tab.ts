@@ -6,14 +6,14 @@ import { RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { SelectModule } from 'primeng/select';
 import { SortEvent } from 'primeng/api';
-import { TableModule } from 'primeng/table';
+import { TableModule, TablePageEvent } from 'primeng/table';
 import { EMPTY, catchError, switchMap } from 'rxjs';
 
 import { AnalyticsApi } from '../../core/analytics.api';
 import { RecentChanges } from '../../core/models';
 import { reasonLabel } from '../../shared/labels';
 import { MoneyPipe } from '../../shared/money.pipe';
-import { PAGE_REPORT, TABLE_PAGE_SIZE } from '../../shared/paging';
+import { PAGE_REPORT, PAGE_SIZES, TABLE_PAGE_SIZE } from '../../shared/paging';
 
 interface RecentChangesSort {
   field: 'effectiveDate' | 'changePercent';
@@ -65,30 +65,45 @@ interface RecentChangesSort {
 })
 export class RecentChangesTab {
   protected readonly periodOptions = [30, 90, 180, 365].map((value) => ({ value, label: `Last ${value} days` }));
-  protected readonly pageSize = TABLE_PAGE_SIZE;
+  protected readonly pageSizes = PAGE_SIZES;
+  protected readonly pageSize = signal(TABLE_PAGE_SIZE);
   protected readonly pageReport = PAGE_REPORT;
   protected readonly reasonLabel = reasonLabel;
 
   protected readonly days = signal(30);
   /** Newest first by default, like the server. Only the % change and the date can be sorted: amounts mix currencies. */
   protected readonly sort = signal<RecentChangesSort>({ field: 'effectiveDate', order: -1 });
-  /** Back to the first page whenever the period or the sort changes. */
-  protected readonly page = linkedSignal({ source: () => [this.days(), this.sort()], computation: () => 0 });
+  /** Back to the first page whenever the period, the sort or the page size changes. */
+  protected readonly page = linkedSignal({
+    source: () => [this.days(), this.sort(), this.pageSize()],
+    computation: () => 0,
+  });
   protected readonly data = signal<RecentChanges | null>(null);
 
 
   constructor() {
     const api = inject(AnalyticsApi);
-    toObservable(computed(() => ({ days: this.days(), page: this.page(), sort: this.sort() })))
+    toObservable(
+      computed(() => ({ days: this.days(), page: this.page(), size: this.pageSize(), sort: this.sort() })),
+    )
       .pipe(
-        switchMap(({ days, page, sort }) =>
+        switchMap(({ days, page, size, sort }) =>
           api
-            .recentChanges(days, page, this.pageSize, `${sort.field},${sort.order === 1 ? 'asc' : 'desc'}`)
+            .recentChanges(days, page, size, `${sort.field},${sort.order === 1 ? 'asc' : 'desc'}`)
             .pipe(catchError(() => EMPTY)),
         ),
         takeUntilDestroyed(),
       )
       .subscribe((data) => this.data.set(data));
+  }
+
+  /** A new page size goes back to page 1 (see `page`). */
+  protected setPage(event: TablePageEvent): void {
+    if (event.rows !== this.pageSize()) {
+      this.pageSize.set(event.rows);
+    } else {
+      this.page.set(Math.floor(event.first / event.rows));
+    }
   }
 
   /**

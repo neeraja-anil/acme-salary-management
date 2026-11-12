@@ -109,8 +109,9 @@
           <p-card header="Problems" [subheader]="r.errorsTruncated
               ? 'Showing the first 500 problems. ' + (r.invalidRows | number) + ' rows have errors in total.'
               : 'Row numbers match the rows in your spreadsheet (the header is row 1).'">
-            <p-table [value]="r.errors" [paginator]="true" [rows]="pager.size" [first]="pager.first()"
-                     (firstChange)="pager.first.set($event)" [showCurrentPageReport]="true"
+            <p-table [value]="r.errors" [paginator]="true" [rows]="pager.size()" [first]="pager.first()"
+                     (firstChange)="pager.first.set($event)" (rowsChange)="pager.size.set($event)"
+                     [rowsPerPageOptions]="pager.sizes" [showCurrentPageReport]="true"
                      [currentPageReportTemplate]="pageReport">
               <ng-template #header>
                 <tr>

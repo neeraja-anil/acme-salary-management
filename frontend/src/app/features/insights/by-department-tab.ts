@@ -41,8 +41,9 @@ import { RangeLegend } from '../../shared/range-legend';
       @if (view() === 'bars') {
         <app-range-legend class="legend" />
       }
-      <p-table [value]="data()?.rows ?? []" class="pay-table" [loading]="!data()" [paginator]="true" [rows]="pager.size"
-               [first]="pager.first()" (firstChange)="pager.first.set($event)" [defaultSortOrder]="-1"
+      <p-table [value]="data()?.rows ?? []" class="pay-table" [loading]="!data()" [paginator]="true" [rows]="pager.size()"
+               [first]="pager.first()" (firstChange)="pager.first.set($event)"
+               (rowsChange)="pager.size.set($event)" [rowsPerPageOptions]="pager.sizes" [defaultSortOrder]="-1"
                [showCurrentPageReport]="true" [currentPageReportTemplate]="pageReport">
         <ng-template #header>
           <tr>

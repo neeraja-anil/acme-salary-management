@@ -35,8 +35,9 @@ import { ResetPasswordDialog } from './reset-password.dialog';
     </div>
 
     <p-card>
-      <p-table [value]="users()" [loading]="!loaded()" dataKey="id" [paginator]="true" [rows]="pager.size"
+      <p-table [value]="users()" [loading]="!loaded()" dataKey="id" [paginator]="true" [rows]="pager.size()"
                [first]="pager.first()" (firstChange)="pager.first.set($event)"
+               (rowsChange)="pager.size.set($event)" [rowsPerPageOptions]="pager.sizes"
                [showCurrentPageReport]="true" [currentPageReportTemplate]="pageReport">
         <ng-template #header>
           <tr>

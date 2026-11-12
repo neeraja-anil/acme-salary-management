@@ -67,8 +67,9 @@
         <p-card header="Changes" class="changes">
           <!-- Sorted and paged by the server, so a sort covers every change in the period, not just this page. -->
           <p-table [value]="d.changes.content" [lazy]="true" [lazyLoadOnInit]="false" [paginator]="true"
-                   [rows]="pageSize" [first]="page() * pageSize" [totalRecords]="d.changes.totalElements"
-                   (firstChange)="page.set($event / pageSize)"
+                   [rows]="pageSize()" [first]="page() * pageSize()" [totalRecords]="d.changes.totalElements"
+                   (onPage)="setPage($event)"
+                   [rowsPerPageOptions]="pageSizes"
                    [sortField]="sort().field" [sortOrder]="sort().order" [defaultSortOrder]="-1"
                    (onSort)="setSort($event)"
                    [showCurrentPageReport]="true" [currentPageReportTemplate]="pageReport">

@@ -1,6 +1,7 @@
 import { Params, ParamMap } from '@angular/router';
 
 import { EmployeeQuery, JobLevel, StatusFilter } from '../../core/models';
+import { PAGE_SIZES, TABLE_PAGE_SIZE } from '../../shared/paging';
 
 /**
  * The directory keeps its whole state in the URL (ui-design.md 4.3), e.g.
@@ -15,11 +16,11 @@ export const DEFAULT_QUERY: EmployeeQuery = {
   jobLevel: [],
   status: 'ACTIVE',
   page: 0,
-  size: 20,
+  size: TABLE_PAGE_SIZE,
   sort: 'name,asc',
 };
 
-export const PAGE_SIZES = [10, 20]; // no table shows more than 20 rows
+export { PAGE_SIZES };
 
 /** Show salaries in each employee's own currency, or converted to USD (?salaryIn=usd). */
 export type SalaryView = 'local' | 'usd';
