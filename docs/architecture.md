@@ -62,7 +62,7 @@ acme-salary-management/
 │       ├── seed/            deterministic 10k-employee generator (JDBC batch insert)
 │       └── common/          error handling (ProblemDetail), Clock bean, paging DTOs
 │   └── src/main/resources/db/migration/   Flyway SQL migrations (V1__schema.sql, …)
-├── frontend/                Angular (standalone components, signals) + Angular Material
+├── frontend/                Angular 21 (standalone components, signals) + PrimeNG 21
 │   └── src/app/
 │       ├── core/            AuthService, auth guard, HTTP error interceptor, ReferenceDataService
 │       ├── features/
@@ -183,7 +183,7 @@ flowchart LR
 |---|---|---|
 | Unit (backend) | JUnit 5, AssertJ, Mockito | Salary-change rules, `PayStatistics` (median of even/odd/single/empty), FX conversion, seed determinism, audit diffing, CSV row validation (bad dates, unknown country, wrong currency, duplicate emails, BOM, quoted commas) |
 | Slice/integration (backend) | `@DataJpaTest`, `@WebMvcTest`, `@SpringBootTest` + MockMvc on a temp SQLite file | Filters and paging, transaction rollback, error responses (400/401/404/409/422), security rules |
-| Frontend | Angular TestBed with Jest or Karma | Directory filter ⇄ URL sync, salary dialog always asks for confirmation, auth guard |
+| Frontend | Angular TestBed with Vitest (the Angular 21 default) | Directory filter ⇄ URL sync, salary dialog always asks for confirmation, auth guard |
 
 Tests use a fixed `Clock` and fixed seeds and never call the network, so they are fast and deterministic.
 
@@ -202,4 +202,6 @@ Tests use a fixed `Clock` and fixed seeds and never call the network, so they ar
 | Pay statistics | All computed in Java from one projection query | SQL `GROUP BY` for count/sum/min/max plus Java for the median | One code path for every figure, unit-testable, and fast enough at 10k. A larger org would move to PostgreSQL `percentile_cont` (see section 6) |
 | Money storage | `INTEGER` whole currency units | `REAL` / decimal-as-text | SQLite has no DECIMAL type. Annual salaries are agreed in whole units, and integers avoid rounding errors. |
 | CSV import | Preview then all-or-nothing import, stateless | Partial import (skip bad rows); server-side staging table | A migration must be complete and correct, and re-uploading is cheap at 10k rows |
-| UI library | Angular Material | PrimeNG | Official Angular library, and its table, paginator and sort support server-side data |
+| UI library | PrimeNG 21 (Aura theme, MIT) | Angular Material (used until the redesign); PrimeNG 22 | Started on Material, which looked too plain. PrimeNG's design tokens give a more polished look and its lazy table supports server-side data. Pinned to 21 because 22 needs Angular 22 and is no longer MIT (it needs a PrimeUI licence key) |
+| Angular version | 21 (LTS) | 22 (latest) | Chosen when the machine had Node 24.6 (Angular 22 needs 24.15+). Node is now pinned to 24.22.3 (`.nvmrc`), so moving to 22 is possible. 21 is still supported long-term, so the upgrade is not needed for this project |
+| Frontend state | Signals in components, filter state in the URL, plain `HttpClient` services | NgRx store | Each screen owns its data and nothing is shared between screens except cached reference data. A store would add ceremony without solving a problem |
