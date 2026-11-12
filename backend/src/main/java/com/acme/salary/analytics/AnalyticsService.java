@@ -34,6 +34,7 @@ import com.acme.salary.reference.JobTitleRepository;
 import com.acme.salary.salary.SalaryMath;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -168,8 +169,12 @@ public class AnalyticsService {
         return new PayBandsResponse(scope.currency(), scope.countryCode(), rows);
     }
 
-    /** US-15: salary changes with an effective date in the last {@code days} days, including today. */
-    public RecentChangesResponse recentChanges(int days, int page, int size) {
+    /**
+     * US-15: salary changes with an effective date in the last {@code days} days, including today.
+     * {@code sort} is {@code effectiveDate} or {@code changePercent}, with {@code asc} or {@code desc}.
+     */
+    public RecentChangesResponse recentChanges(int days, int page, int size, String sort) {
+        Sort order = RecentChangesSort.parse(sort);
         LocalDate to = LocalDate.now(clock);
         LocalDate from = to.minusDays(days - 1L);
 
@@ -190,7 +195,7 @@ public class AnalyticsService {
                         .toList());
 
         PageResponse<RecentChangesResponse.Change> changes = PageResponse.from(
-                analytics.findRecentChanges(from, to, PageRequest.of(page, size)), AnalyticsService::toChange);
+                analytics.findRecentChanges(from, to, PageRequest.of(page, size, order)), AnalyticsService::toChange);
         return new RecentChangesResponse(days, from, to, summary, changes);
     }
 

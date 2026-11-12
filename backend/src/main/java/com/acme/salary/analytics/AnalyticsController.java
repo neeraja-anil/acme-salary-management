@@ -55,7 +55,8 @@ public class AnalyticsController {
     public RecentChangesResponse recentChanges(
             @RequestParam(name = "days", defaultValue = "30") @Min(1) @Max(365) int days,
             @RequestParam(name = "page", defaultValue = "0") @Min(0) int page,
-            @RequestParam(name = "size", defaultValue = "25") @Min(1) @Max(100) int size) {
-        return analyticsService.recentChanges(days, page, size);
+            @RequestParam(name = "size", defaultValue = "25") @Min(1) @Max(100) int size,
+            @RequestParam(name = "sort", defaultValue = "effectiveDate,desc") String sort) {
+        return analyticsService.recentChanges(days, page, size, sort);
     }
 }

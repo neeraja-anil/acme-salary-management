@@ -436,8 +436,8 @@ All four parameters are optional. An unknown `departmentId` returns 400 `INVALID
 ```
 Bands with fewer than 3 people return `"lowSample": true` so that the UI can flag them. A median of 1–2 people is not a reliable band.
 
-### `GET /api/analytics/recent-changes?days=30&page=0&size=25` *(US-15)*
-`days` is 1–365 (default 30). Changes are selected by `effectiveDate`, from `today − (days − 1)` to today inclusive; the response includes `from` and `to`. Changes for employees who have since been terminated are still listed, because the change did happen. Only rows with a `previousAmount` count: an employee's first salary (hired in the app or imported) is a starting point, not a change, so it is excluded without needing a special reason.
+### `GET /api/analytics/recent-changes?days=30&page=0&size=25&sort=effectiveDate,desc` *(US-15)*
+`days` is 1–365 (default 30). `sort` is `effectiveDate` (default, newest first) or `changePercent`, with `asc` or `desc` (default `desc`); anything else is a `400 INVALID_PARAMETER`. Amounts can't be sorted, because the list mixes currencies; a percentage can. The sort applies to the whole period, not just the page. Changes are selected by `effectiveDate`, from `today − (days − 1)` to today inclusive; the response includes `from` and `to`. Changes for employees who have since been terminated are still listed, because the change did happen. Only rows with a `previousAmount` count: an employee's first salary (hired in the app or imported) is a starting point, not a change, so it is excluded without needing a special reason.
 ```json
 {
   "days": 30,

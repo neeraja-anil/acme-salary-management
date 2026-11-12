@@ -25,8 +25,9 @@ public interface AnalyticsRepository extends Repository<Employee, Long> {
     List<SalaryPoint> findActiveSalaryPoints();
 
     /**
-     * Salary changes with an effective date in [from, to], newest first. Rows without a previous amount
-     * are an employee's first salary (hire or import), which is a starting point rather than a change.
+     * Salary changes with an effective date in [from, to], in the order the pageable asks for
+     * ({@link RecentChangesSort}). Rows without a previous amount are an employee's first salary (hire or
+     * import), which is a starting point rather than a change.
      */
     @Query(value = """
             select new com.acme.salary.analytics.RecentChangeRow(
@@ -34,7 +35,6 @@ public interface AnalyticsRepository extends Repository<Employee, Long> {
                 h.previousAmount, h.amount, h.reason, h.effectiveDate, h.changedBy, h.changedAt)
             from SalaryHistory h join h.employee e
             where h.previousAmount is not null and h.effectiveDate between :from and :to
-            order by h.effectiveDate desc, h.id desc
             """,
             countQuery = """
             select count(h) from SalaryHistory h
